@@ -6,10 +6,9 @@ import com.weg.weg_skills.service.CourseService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping(path = "/courses")
@@ -20,5 +19,10 @@ public class CourseController {
     @PostMapping
     public ResponseEntity<CourseResponseDTO> create(@RequestBody @Valid CourseCreateRequestDTO dto) {
         return ResponseEntity.status(201).body(courseService.create(dto));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<CourseResponseDTO>> findAll() {
+        return ResponseEntity.status(200).body(courseService.findAll());
     }
 }
