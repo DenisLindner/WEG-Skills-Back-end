@@ -4,4 +4,5 @@ import com.weg.weg_skills.model.Course;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface CourseRepository extends JpaRepository<Course, Long> {
+    Boolean existsByDescriptionIgnoreCase(String description);
 }
