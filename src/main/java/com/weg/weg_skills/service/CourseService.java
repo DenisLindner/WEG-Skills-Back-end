@@ -33,4 +33,10 @@ public class CourseService {
 
         return courses.stream().map(courseMapper::toResponse).toList();
     }
+
+    public  CourseResponseDTO findById(Long id) {
+        Course course = courseRepository.findById(id).orElseThrow(RuntimeException::new);
+
+        return courseMapper.toResponse(course);
+    }
 }
