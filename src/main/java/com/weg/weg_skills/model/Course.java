@@ -19,7 +19,7 @@ public class Course {
 
     @Column(nullable = false, length = 128, unique = true)
     private String title;
-    @Column(nullable = false)
+    @Column
     private String description;
     @Column(name = "image_url")
     private String imageUrl;
