@@ -25,4 +25,9 @@ public class CourseController {
     public ResponseEntity<List<CourseResponseDTO>> findAll() {
         return ResponseEntity.status(200).body(courseService.findAll());
     }
+
+    @GetMapping(path = "/{id}")
+    public ResponseEntity<CourseResponseDTO> findById(@PathVariable Long id) {
+        return ResponseEntity.status(200).body(courseService.findById(id));
+    }
 }
