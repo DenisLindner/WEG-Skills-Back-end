@@ -2,6 +2,7 @@ package com.weg.weg_skills.controller;
 
 import com.weg.weg_skills.dto.CourseCreateRequestDTO;
 import com.weg.weg_skills.dto.CourseResponseDTO;
+import com.weg.weg_skills.dto.CourseUpdateRequestDTO;
 import com.weg.weg_skills.service.CourseService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -29,5 +30,10 @@ public class CourseController {
     @GetMapping(path = "/{id}")
     public ResponseEntity<CourseResponseDTO> findById(@PathVariable Long id) {
         return ResponseEntity.status(200).body(courseService.findById(id));
+    }
+
+    @PatchMapping(path = "/{id}")
+    public ResponseEntity<CourseResponseDTO> update(@PathVariable Long id, @RequestBody @Valid CourseUpdateRequestDTO dto) {
+        return ResponseEntity.status(200).body(courseService.update(id, dto));
     }
 }
