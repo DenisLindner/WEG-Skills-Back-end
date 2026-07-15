@@ -59,4 +59,12 @@ public class CourseService {
 
         return courseMapper.toResponse(course);
     }
+
+    public void deleteById(Long id) {
+        if (!courseRepository.existsById(id)) {
+            throw new RuntimeException();
+        }
+
+        courseRepository.deleteById(id);
+    }
 }
