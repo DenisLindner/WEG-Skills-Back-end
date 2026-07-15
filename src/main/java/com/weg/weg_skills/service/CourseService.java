@@ -8,6 +8,8 @@ import com.weg.weg_skills.repository.CourseRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @AllArgsConstructor
 public class CourseService {
@@ -24,5 +26,11 @@ public class CourseService {
         course = courseRepository.save(course);
 
         return courseMapper.toResponse(course);
+    }
+
+    public List<CourseResponseDTO> findAll() {
+        List<Course> courses = courseRepository.findAll();
+
+        return courses.stream().map(courseMapper::toResponse).toList();
     }
 }
