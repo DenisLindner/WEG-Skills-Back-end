@@ -2,6 +2,7 @@ package com.weg.weg_skills.service;
 
 import com.weg.weg_skills.dto.ReviewCreateRequestDTO;
 import com.weg.weg_skills.dto.ReviewResponseDTO;
+import com.weg.weg_skills.dto.ReviewUpdateRequestDTO;
 import com.weg.weg_skills.mapper.ReviewMapper;
 import com.weg.weg_skills.model.Course;
 import com.weg.weg_skills.model.Review;
@@ -42,5 +43,15 @@ public class ReviewService {
         List<Review> reviews = reviewRepository.findAllByCourseId(courseId);
 
         return reviews.stream().map(reviewMapper::toResponse).toList();
+    }
+
+    public ReviewResponseDTO update(Long reviewId, ReviewUpdateRequestDTO dto) {
+        Review review = reviewRepository.findById(reviewId).orElseThrow(RuntimeException::new);
+
+        review.setRate(dto.rate());
+
+        review = reviewRepository.save(review);
+
+        return reviewMapper.toResponse(review);
     }
 }
