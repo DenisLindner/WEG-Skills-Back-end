@@ -10,5 +10,5 @@ import java.util.List;
 public interface ReviewRepository extends JpaRepository<Review, Long> {
     Boolean existsByCourseAndUser(Course course, User user);
     Review findByCourseAndUser(Course course, User user);
-    List<Review> findAllByCourse(Course course);
+    List<Review> findAllByCourseId(Long courseId);
 }
