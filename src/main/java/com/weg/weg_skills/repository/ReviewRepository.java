@@ -7,4 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ReviewRepository extends JpaRepository<Review, Long> {
     Boolean existsByCourseAndUser(Course course, User user);
+    Review findByCourseAndUser(Course course, User user);
 }
