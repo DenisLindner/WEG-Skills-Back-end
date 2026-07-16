@@ -2,6 +2,7 @@ package com.weg.weg_skills.controller;
 
 import com.weg.weg_skills.dto.ReviewCreateRequestDTO;
 import com.weg.weg_skills.dto.ReviewResponseDTO;
+import com.weg.weg_skills.dto.ReviewUpdateRequestDTO;
 import com.weg.weg_skills.service.ReviewService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -24,5 +25,10 @@ public class ReviewController {
     @GetMapping(path = "/{courseId}")
     public ResponseEntity<List<ReviewResponseDTO>> findAllByCourse(@PathVariable Long courseId) {
         return ResponseEntity.status(200).body(reviewService.findAllByCourse(courseId));
+    }
+
+    @PatchMapping(path = "/{id}")
+    public ResponseEntity<ReviewResponseDTO> update(@PathVariable Long id, @RequestBody @Valid ReviewUpdateRequestDTO dto) {
+        return ResponseEntity.status(200).body(reviewService.update(id, dto));
     }
 }
