@@ -4,6 +4,8 @@ import com.weg.weg_skills.config.MinioProperties;
 import com.weg.weg_skills.dto.MinioUploadTicketDTO;
 import io.minio.MinioClient;
 import io.minio.PostPolicy;
+import io.minio.StatObjectArgs;
+import io.minio.StatObjectResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -46,6 +48,22 @@ public class MinioService {
                     objectKey,
                     fields,
                     expiresAt.toInstant()
+            );
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public StatObjectResponse getObjectMetadata(
+            String bucket,
+            String objectKey
+    ) {
+        try {
+            return minioClient.statObject(
+                    StatObjectArgs.builder()
+                            .bucket(bucket)
+                            .object(objectKey)
+                            .build()
             );
         } catch (Exception e) {
             throw new RuntimeException(e);
