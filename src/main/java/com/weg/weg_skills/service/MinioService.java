@@ -2,10 +2,7 @@ package com.weg.weg_skills.service;
 
 import com.weg.weg_skills.config.MinioProperties;
 import com.weg.weg_skills.dto.MinioUploadTicketDTO;
-import io.minio.MinioClient;
-import io.minio.PostPolicy;
-import io.minio.StatObjectArgs;
-import io.minio.StatObjectResponse;
+import io.minio.*;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +10,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @AllArgsConstructor
@@ -63,6 +61,29 @@ public class MinioService {
                     StatObjectArgs.builder()
                             .bucket(bucket)
                             .object(objectKey)
+                            .build()
+            );
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String createPrivateReadUrl(
+            String bucket,
+            String objectKey
+    ) {
+        try {
+            long expirationSeconds = minioProperties.playbackExpiration().toSeconds();
+
+            return minioClient.getPresignedObjectUrl(
+                    GetPresignedObjectUrlArgs.builder()
+                            .method(Http.Method.GET)
+                            .bucket(bucket)
+                            .object(objectKey)
+                            .expiry(
+                                    Math.toIntExact(expirationSeconds),
+                                    TimeUnit.SECONDS
+                            )
                             .build()
             );
         } catch (Exception e) {
