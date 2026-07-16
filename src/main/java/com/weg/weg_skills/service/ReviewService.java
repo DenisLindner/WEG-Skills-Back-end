@@ -54,4 +54,12 @@ public class ReviewService {
 
         return reviewMapper.toResponse(review);
     }
+
+    public void deleteById(Long reviewId) {
+        if (!reviewRepository.existsById(reviewId)) {
+            throw new RuntimeException();
+        }
+
+        reviewRepository.deleteById(reviewId);
+    }
 }
