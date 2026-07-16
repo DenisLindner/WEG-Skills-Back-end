@@ -45,8 +45,8 @@ public class ReviewService {
         return reviews.stream().map(reviewMapper::toResponse).toList();
     }
 
-    public ReviewResponseDTO update(Long reviewId, ReviewUpdateRequestDTO dto) {
-        Review review = reviewRepository.findById(reviewId).orElseThrow(RuntimeException::new);
+    public ReviewResponseDTO update(Long id, ReviewUpdateRequestDTO dto) {
+        Review review = reviewRepository.findById(id).orElseThrow(RuntimeException::new);
 
         review.setRate(dto.rate());
 
@@ -55,11 +55,11 @@ public class ReviewService {
         return reviewMapper.toResponse(review);
     }
 
-    public void deleteById(Long reviewId) {
-        if (!reviewRepository.existsById(reviewId)) {
+    public void deleteById(Long id) {
+        if (!reviewRepository.existsById(id)) {
             throw new RuntimeException();
         }
 
-        reviewRepository.deleteById(reviewId);
+        reviewRepository.deleteById(id);
     }
 }
