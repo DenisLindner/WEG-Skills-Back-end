@@ -1,0 +1,8 @@
+package com.weg.weg_skills.repository;
+
+import com.weg.weg_skills.model.Module;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ModuleRepository extends JpaRepository<Module, Long> {
+    Boolean existsByTitleIgnoreCase(String title);
+}
