@@ -4,10 +4,8 @@ import com.weg.weg_skills.dto.LessonCreateRequestDTO;
 import com.weg.weg_skills.dto.LessonResponseDTO;
 import com.weg.weg_skills.dto.LessonUpdateRequestDTO;
 import com.weg.weg_skills.mapper.LessonMapper;
-import com.weg.weg_skills.model.Course;
 import com.weg.weg_skills.model.Lesson;
 import com.weg.weg_skills.model.Module;
-import com.weg.weg_skills.repository.CourseRepository;
 import com.weg.weg_skills.repository.LessonRepository;
 import com.weg.weg_skills.repository.ModuleRepository;
 import lombok.AllArgsConstructor;
@@ -23,7 +21,7 @@ public class LessonService {
     private ModuleRepository moduleRepository;
 
     public LessonResponseDTO create(LessonCreateRequestDTO dto) {
-        Module module = moduleRepository.findById(dto.id())
+        Module module = moduleRepository.findById(dto.moduleId())
                 .orElseThrow(() -> new RuntimeException("Module not found"));
 
         if (lessonRepository.existsByModuleAndTitleIgnoreCase(module, dto.title())) {
