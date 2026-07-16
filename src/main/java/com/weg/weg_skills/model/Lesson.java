@@ -29,8 +29,9 @@ public class Lesson {
     @ManyToOne
     private Module module;
 
-    public Lesson(String title, String description) {
+    public Lesson(String title, String description, Module module) {
         this.title = title;
         this.description = description;
+        this.module = module;
     }
 }

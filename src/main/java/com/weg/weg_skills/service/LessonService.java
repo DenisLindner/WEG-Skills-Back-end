@@ -4,8 +4,12 @@ import com.weg.weg_skills.dto.LessonCreateRequestDTO;
 import com.weg.weg_skills.dto.LessonResponseDTO;
 import com.weg.weg_skills.dto.LessonUpdateRequestDTO;
 import com.weg.weg_skills.mapper.LessonMapper;
+import com.weg.weg_skills.model.Course;
 import com.weg.weg_skills.model.Lesson;
+import com.weg.weg_skills.model.Module;
+import com.weg.weg_skills.repository.CourseRepository;
 import com.weg.weg_skills.repository.LessonRepository;
+import com.weg.weg_skills.repository.ModuleRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,13 +20,17 @@ import java.util.List;
 public class LessonService {
     private LessonRepository lessonRepository;
     private LessonMapper lessonMapper;
+    private ModuleRepository moduleRepository;
 
     public LessonResponseDTO create(LessonCreateRequestDTO dto) {
-        if (lessonRepository.existsByTitleIgnoreCase(dto.title())) {
-            throw new RuntimeException();
+        Module module = moduleRepository.findById(dto.id())
+                .orElseThrow(() -> new RuntimeException("Module not found"));
+
+        if (lessonRepository.existsByModuleAndTitleIgnoreCase(module, dto.title())) {
+            throw new RuntimeException("A lesson with this title already exists in this module");
         }
 
-        Lesson lesson = lessonMapper.toEntity(dto);
+        Lesson lesson = lessonMapper.toEntity(dto, module);
 
         lesson = lessonRepository.save(lesson);
 
@@ -42,11 +50,13 @@ public class LessonService {
     }
 
     public LessonResponseDTO update(Long id, LessonUpdateRequestDTO dto) {
-        Lesson lesson = lessonRepository.findById(id).orElseThrow(RuntimeException::new);
+        Lesson lesson = lessonRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Lesson not found"));
 
         if (dto.title() != null) {
-            if (!dto.title().equals(lesson.getTitle()) && lessonRepository.existsByTitleIgnoreCase(dto.title())) {
-                throw new RuntimeException();
+            if (!dto.title().equals(lesson.getTitle()) &&
+                    lessonRepository.existsByModuleAndTitleIgnoreCase(lesson.getModule(), dto.title())) {
+                throw new RuntimeException("A lesson with this title already exists in this module");
             }
             lesson.setTitle(dto.title());
         }

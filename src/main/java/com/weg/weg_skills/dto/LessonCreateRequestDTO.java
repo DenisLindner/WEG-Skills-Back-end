@@ -17,6 +17,7 @@ public record LessonCreateRequestDTO(
                 max = 255,
                 message = "Description must contain between 3 and 255 characters"
         )
-        String description
+        String description,
+        Long id
 ) {
 }
