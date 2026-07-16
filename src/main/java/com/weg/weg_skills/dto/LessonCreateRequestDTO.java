@@ -22,7 +22,7 @@ public record LessonCreateRequestDTO(
         String description,
 
         @NotNull(message = "The module id cannot be null")
-        @Positive
+        @Positive(message = "The module id has to be positive")
         Long moduleId
 ) {
 }
