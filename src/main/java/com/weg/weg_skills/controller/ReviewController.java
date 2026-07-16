@@ -31,4 +31,10 @@ public class ReviewController {
     public ResponseEntity<ReviewResponseDTO> update(@PathVariable Long id, @RequestBody @Valid ReviewUpdateRequestDTO dto) {
         return ResponseEntity.status(200).body(reviewService.update(id, dto));
     }
+
+    @DeleteMapping(path = "/{id}")
+    public ResponseEntity<Void> deleteById(@PathVariable Long id) {
+        reviewService.deleteById(id);
+        return ResponseEntity.status(204).build();
+    }
 }
