@@ -12,6 +12,8 @@ import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @AllArgsConstructor
 public class ReviewService {
@@ -30,5 +32,15 @@ public class ReviewService {
         review = reviewRepository.save(review);
 
         return reviewMapper.toResponse(review);
+    }
+
+    public List<ReviewResponseDTO> findAllByCourse(Long courseId) {
+        if (!courseRepository.existsById(courseId)) {
+            throw new RuntimeException();
+        }
+
+        List<Review> reviews = reviewRepository.findAllByCourseId(courseId);
+
+        return reviews.stream().map(reviewMapper::toResponse).toList();
     }
 }
