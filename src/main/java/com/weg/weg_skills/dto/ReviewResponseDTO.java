@@ -1,6 +1,6 @@
 package com.weg.weg_skills.dto;
 
-public record RateResponseDTO(
+public record ReviewResponseDTO(
         Long id,
         Integer rate,
         String courseTitle,
