@@ -16,7 +16,9 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d spring_app"]
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"
       interval: 10s
       timeout: 5s
       retries: 5
@@ -26,10 +28,15 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: spring-redis
+    container_name: weg-redis
     restart: unless-stopped
 
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --requirepass
+      - ${REDIS_PASSWORD}
 
     ports:
       - "6379:6379"
@@ -38,7 +45,9 @@ services:
       - redis_data:/data
 
     healthcheck:
-      test: [ "CMD", "redis-cli", "-a", "redis123", "ping" ]
+      test:
+        - CMD-SHELL
+        - redis-cli --no-auth-warning -a "$${REDIS_PASSWORD}" ping | grep -q PONG
       interval: 10s
       timeout: 5s
       retries: 5
@@ -66,15 +75,102 @@ services:
 
     healthcheck:
       test:
-        [
-          "CMD",
-          "curl",
-          "-f",
-          "http://localhost:9000/minio/health/live"
-        ]
+        - CMD
+        - curl
+        - -f
+        - http://localhost:9000/minio/health/live
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+
+    networks:
+      - weg-network
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: weg-minio-init
+    restart: "no"
+
+    depends_on:
+      minio:
+        condition: service_healthy
+
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+
+      MINIO_PUBLIC_BUCKET: ${MINIO_PUBLIC_BUCKET}
+      MINIO_PRIVATE_BUCKET: ${MINIO_PRIVATE_BUCKET}
+
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN}
+
+    entrypoint:
+      - /bin/sh
+      - -c
+
+    command:
+      - |
+        set -eu
+
+        echo "Configurando conexão com o MinIO..."
+
+        mc alias set \
+          local \
+          http://minio:9000 \
+          "$${MINIO_ROOT_USER}" \
+          "$${MINIO_ROOT_PASSWORD}"
+
+        mc ready local
+
+        echo "Criando buckets..."
+
+        mc mb --ignore-existing \
+          "local/$${MINIO_PUBLIC_BUCKET}"
+
+        mc mb --ignore-existing \
+          "local/$${MINIO_PRIVATE_BUCKET}"
+
+        echo "Configurando políticas de acesso..."
+
+        mc anonymous set download \
+          "local/$${MINIO_PUBLIC_BUCKET}"
+
+        mc anonymous set none \
+          "local/$${MINIO_PRIVATE_BUCKET}"
+
+        echo "Criando configuração de CORS..."
+
+        cat > /tmp/cors.xml <<EOF
+        <CORSConfiguration>
+          <CORSRule>
+            <AllowedOrigin>$${FRONTEND_ORIGIN}</AllowedOrigin>
+
+            <AllowedMethod>GET</AllowedMethod>
+            <AllowedMethod>POST</AllowedMethod>
+            <AllowedMethod>PUT</AllowedMethod>
+            <AllowedMethod>HEAD</AllowedMethod>
+
+            <AllowedHeader>*</AllowedHeader>
+
+            <ExposeHeader>ETag</ExposeHeader>
+
+            <MaxAgeSeconds>3600</MaxAgeSeconds>
+          </CORSRule>
+        </CORSConfiguration>
+        EOF
+
+        echo "Aplicando CORS aos buckets..."
+
+        mc cors set \
+          "local/$${MINIO_PUBLIC_BUCKET}" \
+          /tmp/cors.xml
+
+        mc cors set \
+          "local/$${MINIO_PRIVATE_BUCKET}" \
+          /tmp/cors.xml
+
+        echo "MinIO configurado com sucesso."
 
     networks:
       - weg-network
