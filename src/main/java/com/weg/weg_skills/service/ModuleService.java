@@ -1,10 +1,10 @@
 package com.weg.weg_skills.service;
 
-import com.weg.weg_skills.dto.ModuleCreateRequestDTO;
-import com.weg.weg_skills.dto.ModuleResponseDTO;
-import com.weg.weg_skills.dto.ModuleUpdateRequestDTO;
+import com.weg.weg_skills.dto.*;
 import com.weg.weg_skills.mapper.ModuleMapper;
+import com.weg.weg_skills.model.Course;
 import com.weg.weg_skills.model.Module;
+import com.weg.weg_skills.repository.CourseRepository;
 import com.weg.weg_skills.repository.ModuleRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,13 +16,17 @@ import java.util.List;
 public class ModuleService {
     private ModuleRepository moduleRepository;
     private ModuleMapper moduleMapper;
+    private CourseRepository courseRepository;
 
     public ModuleResponseDTO create(ModuleCreateRequestDTO dto) {
-        if (moduleRepository.existsByTitleIgnoreCase(dto.title())) {
-            throw new RuntimeException();
+        Course course = courseRepository.findById(dto.courseId())
+                .orElseThrow(() -> new RuntimeException("Course not found"));
+
+        if (moduleRepository.existsByCourseAndTitleIgnoreCase(course, dto.title())) {
+            throw new RuntimeException("A module with this title already exists in this course");
         }
 
-        Module module = moduleMapper.toEntity(dto);
+        Module module = moduleMapper.toEntity(dto, course);
 
         module = moduleRepository.save(module);
 
@@ -42,11 +46,13 @@ public class ModuleService {
     }
 
     public ModuleResponseDTO update(Long id, ModuleUpdateRequestDTO dto) {
-        Module module = moduleRepository.findById(id).orElseThrow(RuntimeException::new);
+        Module module = moduleRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Module not found"));
 
         if (dto.title() != null) {
-            if (!dto.title().equals(module.getTitle()) && moduleRepository.existsByTitleIgnoreCase(dto.title())) {
-                throw new RuntimeException();
+            if (!dto.title().equals(module.getTitle()) &&
+                    moduleRepository.existsByCourseAndTitleIgnoreCase(module.getCourse(), dto.title())) {
+                throw new RuntimeException("A module with this title already exists in this course");
             }
             module.setTitle(dto.title());
         }
