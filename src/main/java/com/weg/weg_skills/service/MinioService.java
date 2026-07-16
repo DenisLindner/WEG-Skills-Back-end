@@ -102,6 +102,22 @@ public class MinioService {
                 + objectKey;
     }
 
+    public void deleteObject(
+            String bucket,
+            String objectKey
+    ) {
+        try {
+            minioClient.removeObject(
+                    RemoveObjectArgs.builder()
+                            .bucket(bucket)
+                            .object(objectKey)
+                            .build()
+            );
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private String buildBucketUrl(String bucket) {
         return removeTrailingSlash(minioProperties.publicEndpoint())
                 + "/"
