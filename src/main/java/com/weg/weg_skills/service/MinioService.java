@@ -91,6 +91,17 @@ public class MinioService {
         }
     }
 
+    public String createPublicUrl(
+            String bucket,
+            String objectKey
+    ) {
+        return removeTrailingSlash(minioProperties.publicEndpoint())
+                + "/"
+                + bucket
+                + "/"
+                + objectKey;
+    }
+
     private String buildBucketUrl(String bucket) {
         return removeTrailingSlash(minioProperties.publicEndpoint())
                 + "/"
