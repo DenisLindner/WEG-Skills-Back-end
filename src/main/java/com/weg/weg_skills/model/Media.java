@@ -21,7 +21,7 @@ public class Media {
 
     @Column(nullable = false)
     private String bucket;
-    @Column(name = "object_key", nullable = false, length = 1024)
+    @Column(name = "object_key", nullable = false, length = 1024, unique = true)
     private String objectKey;
     @Column(name = "original_filename", nullable = false)
     private String originalFilename;
@@ -51,5 +51,23 @@ public class Media {
         this.mediaType = mediaType;
         this.mediaStatus = mediaStatus;
         this.user = user;
+    }
+
+    public void markAsReady(Long actualSize) {
+        this.actualSize = actualSize;
+        this.mediaStatus = MediaStatus.READY;
+    }
+
+    public void markAsFailed(Long actualSize) {
+        this.actualSize = actualSize;
+        this.mediaStatus = MediaStatus.FAILED;
+    }
+
+    public boolean isPendingUpload() {
+        return mediaStatus == MediaStatus.PENDING_UPLOAD;
+    }
+
+    public boolean isReady() {
+        return mediaStatus == MediaStatus.READY;
     }
 }
