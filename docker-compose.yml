@@ -65,6 +65,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_API_CORS_ALLOW_ORIGIN: ${MINIO_CORS_ALLOWED_ORIGINS}
 
     ports:
       - "9000:9000"
@@ -99,11 +100,8 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-
       MINIO_PUBLIC_BUCKET: ${MINIO_PUBLIC_BUCKET}
       MINIO_PRIVATE_BUCKET: ${MINIO_PRIVATE_BUCKET}
-
-      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN}
 
     entrypoint:
       - /bin/sh
@@ -138,37 +136,6 @@ services:
 
         mc anonymous set none \
           "local/$${MINIO_PRIVATE_BUCKET}"
-
-        echo "Criando configuração de CORS..."
-
-        cat > /tmp/cors.xml <<EOF
-        <CORSConfiguration>
-          <CORSRule>
-            <AllowedOrigin>$${FRONTEND_ORIGIN}</AllowedOrigin>
-
-            <AllowedMethod>GET</AllowedMethod>
-            <AllowedMethod>POST</AllowedMethod>
-            <AllowedMethod>PUT</AllowedMethod>
-            <AllowedMethod>HEAD</AllowedMethod>
-
-            <AllowedHeader>*</AllowedHeader>
-
-            <ExposeHeader>ETag</ExposeHeader>
-
-            <MaxAgeSeconds>3600</MaxAgeSeconds>
-          </CORSRule>
-        </CORSConfiguration>
-        EOF
-
-        echo "Aplicando CORS aos buckets..."
-
-        mc cors set \
-          "local/$${MINIO_PUBLIC_BUCKET}" \
-          /tmp/cors.xml
-
-        mc cors set \
-          "local/$${MINIO_PRIVATE_BUCKET}" \
-          /tmp/cors.xml
 
         echo "MinIO configurado com sucesso."
 
