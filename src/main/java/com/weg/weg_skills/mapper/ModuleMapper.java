@@ -11,6 +11,6 @@ public class ModuleMapper {
     public Module toEntity(ModuleCreateRequestDTO dto) { return new Module(dto.title(), dto.description()); }
 
     public ModuleResponseDTO toResponse(Module module) {
-        return new ModuleResponseDTO(module.getId(), module.getTitle(), module.getDescription(), module.getImageUrl(), module.getCourse());
+        return new ModuleResponseDTO(module.getId(), module.getTitle(), module.getDescription(), module.getImageUrl());
     }
 }
