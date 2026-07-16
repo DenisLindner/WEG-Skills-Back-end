@@ -21,7 +21,7 @@ public class Media {
 
     @Column(nullable = false)
     private String bucket;
-    @Column(name = "object_key", nullable = false)
+    @Column(name = "object_key", nullable = false, length = 1024)
     private String objectKey;
     @Column(name = "original_filename", nullable = false)
     private String originalFilename;
@@ -39,7 +39,7 @@ public class Media {
     @Column(name = "media_status", nullable = false)
     private MediaStatus mediaStatus;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 
     public Media(String bucket, String objectKey, String originalFilename, String contentType, long expectedSize, MediaType mediaType, MediaStatus mediaStatus, User user) {
