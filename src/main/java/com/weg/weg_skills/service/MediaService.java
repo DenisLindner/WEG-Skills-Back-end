@@ -68,6 +68,33 @@ public class MediaService {
         );
     }
 
+    @Transactional
+    public UploadTicketResponseDTO createModuleImageUpload(
+        Long courseId,
+        Long moduleId,
+        Long userId,
+        CreateMediaUploadRequestDTO dto
+    ) {
+        validateImage(dto);
+
+        String objectKey = String.format(
+                "courses/%d/modules/%d/images/%s.%s",
+                courseId,
+                moduleId,
+                UUID.randomUUID(),
+                getExtension(dto.contentType())
+        );
+
+        return createUpload(
+                userId,
+                dto,
+                MediaType.MODULE_IMAGE,
+                minioProperties.buckets().publicAssets(),
+                objectKey,
+                MAX_IMAGE_SIZE
+        );
+    }
+
     private UploadTicketResponseDTO createUpload(
             Long userId,
             CreateMediaUploadRequestDTO dto,
