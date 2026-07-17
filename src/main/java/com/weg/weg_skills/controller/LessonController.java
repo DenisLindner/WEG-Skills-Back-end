@@ -33,7 +33,7 @@ public class LessonController {
     }
 
     @PatchMapping(path = "/{id}")
-    public ResponseEntity<LessonResponseDTO> update(@PathVariable Long id, @Valid LessonUpdateRequestDTO dto) {
+    public ResponseEntity<LessonResponseDTO> update(@PathVariable Long id, @RequestBody @Valid LessonUpdateRequestDTO dto) {
         return ResponseEntity.status(200).body(lessonService.update(id, dto));
     }
 
