@@ -218,7 +218,7 @@ public class MediaService {
 
     @Transactional(readOnly = true)
     public String getPublicUrl(Long mediaId) {
-        Media media = findById(mediaId);
+        Media media = findReadMediaById(mediaId);
 
         if (media.getMediaType() == MediaType.LESSON_VIDEO) {
             throw new RuntimeException();
@@ -232,7 +232,7 @@ public class MediaService {
 
     @Transactional(readOnly = true)
     public String getPlaybackVideoUrl(Long mediaId) {
-        Media media = findById(mediaId);
+        Media media = findReadMediaById(mediaId);
 
         if (media.getMediaType() != MediaType.LESSON_VIDEO) {
             throw new RuntimeException();
@@ -242,6 +242,16 @@ public class MediaService {
                 media.getBucket(),
                 media.getObjectKey()
         );
+    }
+
+    private Media findReadMediaById(Long mediaId) {
+        Media media = findById(mediaId);
+
+        if (!media.isReady()) {
+            throw new RuntimeException();
+        }
+
+        return media;
     }
 
     private Media findById(Long mediaId) {
