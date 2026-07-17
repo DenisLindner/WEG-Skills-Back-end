@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.InvalidPropertiesFormatException;
 
 @RestController
-@RequestMapping(path = "medias")
+@RequestMapping(path = "/medias")
 @AllArgsConstructor
 public class MediaController {
     private MediaService mediaService;
