@@ -12,6 +12,6 @@ public class CourseMapper {
     }
 
     public CourseResponseDTO toResponse(Course course) {
-        return new CourseResponseDTO(course.getId(), course.getTitle(), course.getDescription(), course.getImageUrl());
+        return new CourseResponseDTO(course.getId(), course.getTitle(), course.getDescription());
     }
 }
