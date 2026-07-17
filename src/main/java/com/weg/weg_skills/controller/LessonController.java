@@ -1,8 +1,6 @@
 package com.weg.weg_skills.controller;
 
-import com.weg.weg_skills.dto.LessonCreateRequestDTO;
-import com.weg.weg_skills.dto.LessonResponseDTO;
-import com.weg.weg_skills.dto.LessonUpdateRequestDTO;
+import com.weg.weg_skills.dto.*;
 import com.weg.weg_skills.service.LessonService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -22,13 +20,18 @@ public class LessonController {
         return ResponseEntity.status(201).body(lessonService.create(dto));
     }
 
+    @PostMapping(path = "/{id}/videos/upload")
+    public ResponseEntity<UploadTicketResponseDTO> uploadVideo(@PathVariable Long id, @RequestBody @Valid CreateMediaUploadRequestDTO dto) {
+        return ResponseEntity.status(201).body(lessonService.uploadVideo(id, dto));
+    }
+
     @GetMapping(path = "/module/{moduleId}")
     public ResponseEntity<List<LessonResponseDTO>> findAllByModule(@PathVariable Long moduleId) {
         return ResponseEntity.status(200).body(lessonService.findAllByModule(moduleId));
     }
 
     @GetMapping(path = "/{id}")
-    public ResponseEntity<LessonResponseDTO> findById(@PathVariable Long id) {
+    public ResponseEntity<LessonDetailsResponseDTO> findById(@PathVariable Long id) {
         return ResponseEntity.status(200).body(lessonService.findById(id));
     }
 
