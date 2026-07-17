@@ -307,7 +307,7 @@ public class MediaService {
             case "image/jpeg" -> "jpg";
             case "image/png" -> "png";
             case "image/webp" -> "webp";
-            case "image/mp4" -> "mp4";
+            case "video/mp4" -> "mp4";
             default -> throw new RuntimeException();
         };
     }
