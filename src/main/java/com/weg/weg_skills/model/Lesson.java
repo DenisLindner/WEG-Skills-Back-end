@@ -19,15 +19,13 @@ public class Lesson {
 
     @Column(nullable = false, length = 128, unique = true)
     private String title;
-
     @Column
     private String description;
-
-    @Column(name = "video_url")
-    private String videoUrl;
-
     @ManyToOne
     private Module module;
+    @OneToOne
+    @JoinColumn(name = "video_media_id")
+    private Media video;
 
     public Lesson(String title, String description, Module module) {
         this.title = title;
