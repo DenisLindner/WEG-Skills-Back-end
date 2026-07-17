@@ -8,5 +8,5 @@ import java.util.List;
 
 public interface ModuleRepository extends JpaRepository<Module, Long> {
     Boolean existsByCourseAndTitleIgnoreCase(Course course, String title);
-    List<Module> findAllByCourse(Course course);
+    List<Module> findAllByCourseId(Long courseId);
 }
