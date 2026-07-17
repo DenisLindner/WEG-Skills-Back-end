@@ -17,7 +17,7 @@ public class Module {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 128, unique = true)
+    @Column(nullable = false, length = 128)
     private String title;
     @Column
     private String description;
