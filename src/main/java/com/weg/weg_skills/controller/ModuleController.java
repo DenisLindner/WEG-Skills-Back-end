@@ -22,9 +22,9 @@ public class ModuleController {
         return ResponseEntity.status(201).body(moduleService.create(dto));
     }
 
-    @GetMapping
-    public ResponseEntity<List<ModuleResponseDTO>> findAll() {
-        return ResponseEntity.status(200).body(moduleService.findAll());
+    @GetMapping(path = "/course/{courseId}")
+    public ResponseEntity<List<ModuleResponseDTO>> findAll(@PathVariable Long courseId) {
+        return ResponseEntity.status(200).body(moduleService.findAllByCourse(courseId));
     }
 
     @GetMapping(path = "/{id}")

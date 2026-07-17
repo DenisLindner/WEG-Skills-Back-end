@@ -35,8 +35,12 @@ public class LessonService {
         return lessonMapper.toResponse(lesson);
     }
 
-    public List<LessonResponseDTO> findAll() {
-        List<Lesson> lessons = lessonRepository.findAll();
+    public List<LessonResponseDTO> findAllByModule(Long moduleId) {
+        if (!moduleRepository.existsById(moduleId)) {
+            throw new RuntimeException();
+        }
+
+        List<Lesson> lessons = lessonRepository.findAllByModuleId(moduleId);
 
         return lessons.stream().map(lessonMapper::toResponse).toList();
     }

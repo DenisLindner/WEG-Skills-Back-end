@@ -33,8 +33,12 @@ public class ModuleService {
         return moduleMapper.toResponse(module);
     }
 
-    public List<ModuleResponseDTO> findAll() {
-        List<Module> modules = moduleRepository.findAll();
+    public List<ModuleResponseDTO> findAllByCourse(Long courseId) {
+        if (!courseRepository.existsById(courseId)) {
+            throw new RuntimeException();
+        }
+
+        List<Module> modules = moduleRepository.findAllByCourseId(courseId);
 
         return modules.stream().map(moduleMapper::toResponse).toList();
     }
