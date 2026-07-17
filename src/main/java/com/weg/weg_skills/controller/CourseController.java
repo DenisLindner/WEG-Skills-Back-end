@@ -1,8 +1,6 @@
 package com.weg.weg_skills.controller;
 
-import com.weg.weg_skills.dto.CourseCreateRequestDTO;
-import com.weg.weg_skills.dto.CourseResponseDTO;
-import com.weg.weg_skills.dto.CourseUpdateRequestDTO;
+import com.weg.weg_skills.dto.*;
 import com.weg.weg_skills.service.CourseService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -20,6 +18,11 @@ public class CourseController {
     @PostMapping
     public ResponseEntity<CourseResponseDTO> create(@RequestBody @Valid CourseCreateRequestDTO dto) {
         return ResponseEntity.status(201).body(courseService.create(dto));
+    }
+
+    @PostMapping(path = "/{id}/images/upload")
+    public ResponseEntity<UploadTicketResponseDTO> uploadImage(@PathVariable Long id, @RequestBody @Valid CreateMediaUploadRequestDTO dto) {
+        return ResponseEntity.status(201).body(courseService.uploadImage(id, dto));
     }
 
     @GetMapping
