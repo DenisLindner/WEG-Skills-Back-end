@@ -244,6 +244,20 @@ public class MediaService {
         );
     }
 
+    @Transactional
+    public void delete(Long mediaId) {
+        Media media = findById(mediaId);
+
+        if (media.getMediaStatus() != MediaStatus.DELETED) {
+            minioService.deleteObject(
+                    media.getBucket(),
+                    media.getObjectKey()
+            );
+
+            media.setMediaStatus(MediaStatus.DELETED);
+        }
+    }
+
     private Media findReadMediaById(Long mediaId) {
         Media media = findById(mediaId);
 
