@@ -11,6 +11,6 @@ public class LessonMapper {
     public Lesson toEntity(LessonCreateRequestDTO dto, Module module) { return new Lesson(dto.title(), dto.description(), module); }
 
     public LessonResponseDTO toResponse(Lesson lesson) {
-        return new LessonResponseDTO(lesson.getId(), lesson.getTitle(), lesson.getDescription(), lesson.getVideoUrl());
+        return new LessonResponseDTO(lesson.getId(), lesson.getTitle(), lesson.getDescription());
     }
 }
