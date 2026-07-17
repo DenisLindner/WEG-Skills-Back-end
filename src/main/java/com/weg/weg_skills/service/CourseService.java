@@ -1,8 +1,6 @@
 package com.weg.weg_skills.service;
 
-import com.weg.weg_skills.dto.CourseCreateRequestDTO;
-import com.weg.weg_skills.dto.CourseResponseDTO;
-import com.weg.weg_skills.dto.CourseUpdateRequestDTO;
+import com.weg.weg_skills.dto.*;
 import com.weg.weg_skills.mapper.CourseMapper;
 import com.weg.weg_skills.model.Course;
 import com.weg.weg_skills.repository.CourseRepository;
@@ -16,6 +14,7 @@ import java.util.List;
 public class CourseService {
     private CourseRepository courseRepository;
     private CourseMapper courseMapper;
+    private MediaService mediaService;
 
     public CourseResponseDTO create(CourseCreateRequestDTO dto) {
         if (courseRepository.existsByTitleIgnoreCase(dto.title())) {
@@ -27,6 +26,12 @@ public class CourseService {
         course = courseRepository.save(course);
 
         return courseMapper.toResponse(course);
+    }
+
+    public UploadTicketResponseDTO uploadImage(Long id, CreateMediaUploadRequestDTO dto) {
+        Course course = courseRepository.findById(id).orElseThrow(RuntimeException::new);
+
+        return mediaService.createCourseImageUpload(course.getId(), null, dto);
     }
 
     public List<CourseResponseDTO> findAll() {
