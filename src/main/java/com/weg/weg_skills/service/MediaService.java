@@ -10,11 +10,14 @@ import com.weg.weg_skills.model.Media;
 import com.weg.weg_skills.model.User;
 import com.weg.weg_skills.repository.MediaRepository;
 import com.weg.weg_skills.repository.UserRepository;
+import io.minio.StatObjectResponse;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.InvalidPropertiesFormatException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -163,6 +166,58 @@ public class MediaService {
                 ticket.fields(),
                 ticket.expiresAt()
         );
+    }
+
+    @Transactional(dontRollbackOn = InvalidPropertiesFormatException.class)
+    public Media completeUpload(Long mediaId) throws InvalidPropertiesFormatException {
+        Media media = findById(mediaId);
+
+        if (media.isReady()) {
+            return media;
+        }
+
+        if (!media.isPendingUpload()) {
+            throw new IllegalStateException();
+        }
+
+        StatObjectResponse metadata =
+                minioService.getObjectMetadata(media.getBucket(), media.getObjectKey());
+
+        boolean invalidSize = metadata.size() != media.getExpectedSize();
+
+        boolean invalidType = !Objects.equals(
+                metadata.contentType(),
+                media.getContentType()
+        );
+
+        if (invalidType || invalidSize) {
+            media.markAsFailed(metadata.size());
+
+            try {
+                minioService.deleteObject(
+                        media.getBucket(),
+                        media.getObjectKey()
+                );
+            } catch (RuntimeException exception) {
+                log.warn(
+                        "Could not delete invalid media object: {}",
+                        media.getObjectKey(),
+                        exception
+                );
+            }
+
+            throw new InvalidPropertiesFormatException(
+                    "Uploaded file does not match the expected metadata"
+            );
+        }
+
+        media.markAsReady(metadata.size());
+
+        return media;
+    }
+
+    private Media findById(Long mediaId) {
+        return mediaRepository.findById(mediaId).orElseThrow(RuntimeException::new);
     }
 
     private void validateImage(CreateMediaUploadRequestDTO dto) {
