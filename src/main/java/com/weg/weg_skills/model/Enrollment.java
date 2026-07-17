@@ -2,6 +2,7 @@ package com.weg.weg_skills.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "enrollments")
@@ -20,8 +21,11 @@ public class Enrollment {
     @ManyToOne
     private Course course;
 
+    private LocalDateTime enrolledAt;
+
     public Enrollment(User user, Course course) {
         this.user = user;
         this.course = course;
+        this.enrolledAt = LocalDateTime.now();
     }
 }

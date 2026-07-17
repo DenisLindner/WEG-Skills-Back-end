@@ -1,6 +1,7 @@
 package com.weg.weg_skills.controller;
 
 import com.weg.weg_skills.dto.EnrollmentRequestDTO;
+import com.weg.weg_skills.dto.EnrollmentResponseDTO;
 import com.weg.weg_skills.service.EnrollmentService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -17,8 +18,8 @@ public class EnrollmentController {
     private final EnrollmentService enrollmentService;
 
     @PostMapping
-    public ResponseEntity<String> enroll(@Valid @RequestBody EnrollmentRequestDTO requestDTO) {
-        enrollmentService.enrollUser(requestDTO);
-        return ResponseEntity.status(201).body("Matrícula realizada com sucesso!");
+    public ResponseEntity<EnrollmentResponseDTO> enroll(@Valid @RequestBody EnrollmentRequestDTO requestDTO) {
+        EnrollmentResponseDTO response = enrollmentService.enrollUser(requestDTO);
+        return ResponseEntity.status(201).body(response);
     }
 }
