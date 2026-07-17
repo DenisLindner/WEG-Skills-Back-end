@@ -7,7 +7,6 @@ import com.weg.weg_skills.dto.UploadTicketResponseDTO;
 import com.weg.weg_skills.enums.MediaStatus;
 import com.weg.weg_skills.enums.MediaType;
 import com.weg.weg_skills.model.Media;
-import com.weg.weg_skills.model.User;
 import com.weg.weg_skills.repository.MediaRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import io.minio.StatObjectResponse;
@@ -47,7 +46,7 @@ public class MediaService {
     private MinioProperties minioProperties;
 
     @Transactional
-    public UploadTicketResponseDTO createCourseImageUpload(
+    public CreatedMediaUpload createCourseImageUpload(
         Long courseId,
         Long userId,
         CreateMediaUploadRequestDTO dto
@@ -72,7 +71,7 @@ public class MediaService {
     }
 
     @Transactional
-    public UploadTicketResponseDTO createModuleImageUpload(
+    public CreatedMediaUpload createModuleImageUpload(
         Long courseId,
         Long moduleId,
         Long userId,
@@ -99,7 +98,7 @@ public class MediaService {
     }
 
     @Transactional
-    public UploadTicketResponseDTO createLessonVideoUpload(
+    public CreatedMediaUpload createLessonVideoUpload(
         Long courseId,
         Long moduleId,
         Long lessonId,
@@ -127,7 +126,7 @@ public class MediaService {
         );
     }
 
-    private UploadTicketResponseDTO createUpload(
+    private CreatedMediaUpload createUpload(
             Long userId,
             CreateMediaUploadRequestDTO dto,
             MediaType mediaType,
@@ -135,7 +134,7 @@ public class MediaService {
             String objectKey,
             long maximumSize
     ) {
-        User user = userRepository.findById(userId).orElseThrow(RuntimeException::new);
+        // User user = userRepository.findById(userId).orElseThrow(RuntimeException::new);
 
         String originalFilename = sanitizeFilename(dto.fileName());
 
@@ -147,10 +146,10 @@ public class MediaService {
                 dto.size(),
                 mediaType,
                 MediaStatus.PENDING_UPLOAD,
-                user
+                null
         );
 
-        mediaRepository.save(media);
+        media = mediaRepository.save(media);
 
         MinioUploadTicketDTO ticket = minioService.createUploadTicket(
                 bucket,
@@ -159,12 +158,15 @@ public class MediaService {
                 maximumSize
         );
 
-        return new UploadTicketResponseDTO(
-                media.getId(),
-                ticket.uploadUrl(),
-                objectKey,
-                ticket.fields(),
-                ticket.expiresAt()
+        return new CreatedMediaUpload(
+                new UploadTicketResponseDTO(
+                    media.getId(),
+                    ticket.uploadUrl(),
+                    objectKey,
+                    ticket.fields(),
+                    ticket.expiresAt()
+                ),
+                media
         );
     }
 

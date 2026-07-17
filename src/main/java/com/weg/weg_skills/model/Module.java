@@ -17,17 +17,15 @@ public class Module {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 128, unique = true)
+    @Column(nullable = false, length = 128)
     private String title;
-
     @Column
     private String description;
-
-    @Column(name = "image_url")
-    private String imageUrl;
-
     @ManyToOne
     private Course course;
+    @OneToOne
+    @JoinColumn(name = "image_media_id")
+    private Media image;
 
     public Module(String title, String description, Course course) {
         this.title = title;

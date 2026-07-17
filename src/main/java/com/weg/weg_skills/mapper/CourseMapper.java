@@ -11,7 +11,7 @@ public class CourseMapper {
         return new Course(dto.title(), dto.description());
     }
 
-    public CourseResponseDTO toResponse(Course course) {
-        return new CourseResponseDTO(course.getId(), course.getTitle(), course.getDescription(), course.getImageUrl());
+    public CourseResponseDTO toResponse(Course course, String url) {
+        return new CourseResponseDTO(course.getId(), course.getTitle(), course.getDescription(), url);
     }
 }

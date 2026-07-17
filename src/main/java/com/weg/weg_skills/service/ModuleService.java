@@ -8,6 +8,7 @@ import com.weg.weg_skills.repository.CourseRepository;
 import com.weg.weg_skills.repository.ModuleRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -17,6 +18,7 @@ public class ModuleService {
     private ModuleRepository moduleRepository;
     private ModuleMapper moduleMapper;
     private CourseRepository courseRepository;
+    private MediaService mediaService;
 
     public ModuleResponseDTO create(ModuleCreateRequestDTO dto) {
         Course course = courseRepository.findById(dto.courseId())
@@ -30,7 +32,22 @@ public class ModuleService {
 
         module = moduleRepository.save(module);
 
-        return moduleMapper.toResponse(module);
+        return moduleMapper.toResponse(module, null);
+    }
+
+    @Transactional
+    public UploadTicketResponseDTO uploadImage(Long id, CreateMediaUploadRequestDTO dto) {
+        Module module = moduleRepository.findById(id).orElseThrow(RuntimeException::new);
+
+        CreatedMediaUpload createdMedia = mediaService.createModuleImageUpload(module.getCourse().getId(), module.getId(), null, dto);
+
+        if (module.getImage() != null) {
+            mediaService.delete(module.getImage().getId());
+        }
+        module.setImage(createdMedia.media());
+        moduleRepository.save(module);
+
+        return createdMedia.ticket();
     }
 
     public List<ModuleResponseDTO> findAllByCourse(Long courseId) {
@@ -40,13 +57,13 @@ public class ModuleService {
 
         List<Module> modules = moduleRepository.findAllByCourseId(courseId);
 
-        return modules.stream().map(moduleMapper::toResponse).toList();
+        return modules.stream().map(m -> moduleMapper.toResponse(m, m.getImage() != null && m.getImage().isReady() ? mediaService.getPublicUrl(m.getImage().getId()) : null)).toList();
     }
 
     public ModuleResponseDTO findById(Long id) {
         Module module = moduleRepository.findById(id).orElseThrow(RuntimeException::new);
 
-        return moduleMapper.toResponse(module);
+        return moduleMapper.toResponse(module, module.getImage() != null && module.getImage().isReady() ? mediaService.getPublicUrl(module.getImage().getId()) : null);
     }
 
     public ModuleResponseDTO update(Long id, ModuleUpdateRequestDTO dto) {
@@ -67,7 +84,7 @@ public class ModuleService {
 
         module = moduleRepository.save(module);
 
-        return moduleMapper.toResponse(module);
+        return moduleMapper.toResponse(module, module.getImage() != null && module.getImage().isReady() ? mediaService.getPublicUrl(module.getImage().getId()) : null);
     }
 
     public void deleteById (Long id) {

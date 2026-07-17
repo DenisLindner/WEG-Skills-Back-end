@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 public class ModuleMapper {
     public Module toEntity(ModuleCreateRequestDTO dto, Course course) { return new Module(dto.title(), dto.description(), course); }
 
-    public ModuleResponseDTO toResponse(Module module) {
-        return new ModuleResponseDTO(module.getId(), module.getTitle(), module.getDescription(), module.getImageUrl());
+    public ModuleResponseDTO toResponse(Module module, String url) {
+        return new ModuleResponseDTO(module.getId(), module.getTitle(), module.getDescription(), url);
     }
 }
