@@ -19,7 +19,6 @@ public class EnrollmentController {
 
     @PostMapping
     public ResponseEntity<EnrollmentResponseDTO> enroll(@Valid @RequestBody EnrollmentRequestDTO requestDTO) {
-        EnrollmentResponseDTO response = enrollmentService.enrollUser(requestDTO);
-        return ResponseEntity.status(201).body(response);
+        return ResponseEntity.status(201).body(enrollmentService.enrollUser(requestDTO));
     }
 }

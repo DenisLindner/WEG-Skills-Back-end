@@ -31,8 +31,8 @@ public class EnrollmentService {
         }
 
         Enrollment enrollment = enrollmentMapper.toEntity(user, course);
-        Enrollment savedEnrollment = enrollmentRepository.save(enrollment);
+        enrollment = enrollmentRepository.save(enrollment);
 
-        return enrollmentMapper.toResponseDTO(savedEnrollment);
+        return enrollmentMapper.toResponseDTO(enrollment);
     }
 }

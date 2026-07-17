@@ -21,6 +21,7 @@ public class Enrollment {
     @ManyToOne
     private Course course;
 
+    @Column(name = "enrolled_at")
     private LocalDateTime enrolledAt;
 
     public Enrollment(User user, Course course) {
