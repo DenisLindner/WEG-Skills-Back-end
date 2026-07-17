@@ -109,7 +109,7 @@ public class MediaService {
         validateVideo(dto);
 
         String objectKey = String.format(
-                "courses/%d/modules/%d/lessons/%d/images/%s.%s",
+                "courses/%d/modules/%d/lessons/%d/videos/%s.%s",
                 courseId,
                 moduleId,
                 lessonId,
