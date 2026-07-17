@@ -230,6 +230,20 @@ public class MediaService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public String getPlaybackVideoUrl(Long mediaId) {
+        Media media = findById(mediaId);
+
+        if (media.getMediaType() != MediaType.LESSON_VIDEO) {
+            throw new RuntimeException();
+        }
+
+        return minioService.createPrivateReadUrl(
+                media.getBucket(),
+                media.getObjectKey()
+        );
+    }
+
     private Media findById(Long mediaId) {
         return mediaRepository.findById(mediaId).orElseThrow(RuntimeException::new);
     }
