@@ -11,10 +11,10 @@ import com.weg.weg_skills.model.User;
 import com.weg.weg_skills.repository.MediaRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import io.minio.StatObjectResponse;
-import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.InvalidPropertiesFormatException;
 import java.util.Objects;
@@ -168,7 +168,7 @@ public class MediaService {
         );
     }
 
-    @Transactional(dontRollbackOn = InvalidPropertiesFormatException.class)
+    @Transactional(noRollbackFor = InvalidPropertiesFormatException.class)
     public Media completeUpload(Long mediaId) throws InvalidPropertiesFormatException {
         Media media = findById(mediaId);
 
@@ -214,6 +214,20 @@ public class MediaService {
         media.markAsReady(metadata.size());
 
         return media;
+    }
+
+    @Transactional(readOnly = true)
+    public String getPublicUrl(Long mediaId) {
+        Media media = findById(mediaId);
+
+        if (media.getMediaType() == MediaType.LESSON_VIDEO) {
+            throw new RuntimeException();
+        }
+
+        return minioService.createPublicUrl(
+                media.getBucket(),
+                media.getObjectKey()
+        );
     }
 
     private Media findById(Long mediaId) {
