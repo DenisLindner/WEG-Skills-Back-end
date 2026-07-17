@@ -21,7 +21,7 @@ public class Review {
 
     @Column(nullable = false)
     @Min(0)
-    @Max(0)
+    @Max(10)
     private Integer rate;
 
     @ManyToOne(fetch = FetchType.LAZY)
