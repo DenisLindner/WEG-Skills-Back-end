@@ -95,6 +95,35 @@ public class MediaService {
         );
     }
 
+    @Transactional
+    public UploadTicketResponseDTO createLessonVideoUpload(
+        Long courseId,
+        Long moduleId,
+        Long lessonId,
+        Long userId,
+        CreateMediaUploadRequestDTO dto
+    ) {
+        validateVideo(dto);
+
+        String objectKey = String.format(
+                "courses/%d/modules/%d/lessons/%d/images/%s.%s",
+                courseId,
+                moduleId,
+                lessonId,
+                UUID.randomUUID(),
+                getExtension(dto.contentType())
+        );
+
+        return createUpload(
+                userId,
+                dto,
+                MediaType.LESSON_VIDEO,
+                minioProperties.buckets().privateVideos(),
+                objectKey,
+                MAX_VIDEO_SIZE
+        );
+    }
+
     private UploadTicketResponseDTO createUpload(
             Long userId,
             CreateMediaUploadRequestDTO dto,
