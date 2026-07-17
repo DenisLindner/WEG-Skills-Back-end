@@ -6,6 +6,7 @@ import com.weg.weg_skills.model.Course;
 import com.weg.weg_skills.repository.CourseRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -25,25 +26,36 @@ public class CourseService {
 
         course = courseRepository.save(course);
 
-        return courseMapper.toResponse(course);
+        return courseMapper.toResponse(course, null);
     }
 
+    @Transactional
     public UploadTicketResponseDTO uploadImage(Long id, CreateMediaUploadRequestDTO dto) {
         Course course = courseRepository.findById(id).orElseThrow(RuntimeException::new);
 
-        return mediaService.createCourseImageUpload(course.getId(), null, dto);
+        CreatedMediaUpload createdMedia = mediaService.createCourseImageUpload(course.getId(), null, dto);
+
+        if (course.getImage() != null) {
+            mediaService.delete(course.getImage().getId());
+        }
+        course.setImage(createdMedia.media());
+        courseRepository.save(course);
+
+        return createdMedia.ticket();
     }
 
     public List<CourseResponseDTO> findAll() {
         List<Course> courses = courseRepository.findAll();
 
-        return courses.stream().map(courseMapper::toResponse).toList();
+        return courses.stream().map(c ->
+            courseMapper.toResponse(c, c.getImage() != null && c.getImage().isReady() ? mediaService.getPublicUrl(c.getImage().getId()) : null)
+        ).toList();
     }
 
     public CourseResponseDTO findById(Long id) {
         Course course = courseRepository.findById(id).orElseThrow(RuntimeException::new);
 
-        return courseMapper.toResponse(course);
+        return courseMapper.toResponse(course, course.getImage() != null && course.getImage().isReady() ? mediaService.getPublicUrl(course.getImage().getId()) : null);
     }
 
     public CourseResponseDTO update(Long id, CourseUpdateRequestDTO dto) {
@@ -62,7 +74,7 @@ public class CourseService {
 
         course = courseRepository.save(course);
 
-        return courseMapper.toResponse(course);
+        return courseMapper.toResponse(course, course.getImage() != null && course.getImage().isReady() ? mediaService.getPublicUrl(course.getImage().getId()) : null);
     }
 
     public void deleteById(Long id) {
