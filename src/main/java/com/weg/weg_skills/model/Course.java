@@ -21,8 +21,9 @@ public class Course {
     private String title;
     @Column
     private String description;
-    @Column(name = "image_url")
-    private String imageUrl;
+    @OneToOne
+    @JoinColumn(name = "video_media_id")
+    private Media video;
 
     public Course(String title, String description) {
         this.title = title;
