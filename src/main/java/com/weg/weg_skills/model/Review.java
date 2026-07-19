@@ -9,7 +9,15 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "reviews")
+@Table(
+        name = "reviews",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_review_user_course",
+                        columnNames = {"user_id", "course_id"}
+                )
+        }
+)
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -25,9 +33,11 @@ public class Review {
     private Integer rate;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    private Course course;
-    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false)
     private User user;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false)
+    private Course course;
 
     public Review(Integer rate, Course course, User user) {
         this.rate = rate;
