@@ -1,6 +1,6 @@
 package com.weg.weg_skills.controller;
 
-import com.weg.weg_skills.model.Media;
+import com.weg.weg_skills.dto.MediaResponseDTO;
 import com.weg.weg_skills.service.MediaService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +18,7 @@ public class MediaController {
     private MediaService mediaService;
 
     @PostMapping(path = "/{mediaId}/complete")
-    public ResponseEntity<Media> completeUpload(@PathVariable Long mediaId) throws InvalidPropertiesFormatException {
+    public ResponseEntity<MediaResponseDTO> completeUpload(@PathVariable Long mediaId) throws InvalidPropertiesFormatException {
         return ResponseEntity.status(200).body(mediaService.completeUpload(mediaId));
     }
 }
