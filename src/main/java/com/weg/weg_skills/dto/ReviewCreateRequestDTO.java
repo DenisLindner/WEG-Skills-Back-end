@@ -7,8 +7,8 @@ import jakarta.validation.constraints.Positive;
 
 public record ReviewCreateRequestDTO(
         @NotNull(message = "Rate is required")
-        @Min(value = 0, message = "Rate must be less than 10")
-        @Max(value = 10, message = "Rate must be greater than 0")
+        @Min(value = 0, message = "Rate must be greater than or equal to 0")
+        @Max(value = 10, message = "Rate must be less than or equal to 10")
         Integer rate,
 
         @NotNull(message = "Course ID is required")
