@@ -5,7 +5,15 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "enrollments")
+@Table(
+        name = "enrollments",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_enrollment_user_course",
+                        columnNames = {"user_id", "course_id"}
+                )
+        }
+)
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -15,10 +23,11 @@ public class Enrollment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false)
     private User user;
-
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false)
     private Course course;
 
     @Column(name = "enrolled_at")

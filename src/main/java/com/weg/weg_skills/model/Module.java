@@ -6,8 +6,19 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
-@Table(name = "modules")
+@Table(
+        name = "modules",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_module_title_course",
+                        columnNames = {"title", "course_id"}
+                )
+        }
+)
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -21,11 +32,15 @@ public class Module {
     private String title;
     @Column
     private String description;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false)
     private Course course;
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "image_media_id")
     private Media image;
+
+    @OneToMany(mappedBy = "module", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Lesson> lessons = new ArrayList<>();
 
     public Module(String title, String description, Course course) {
         this.title = title;

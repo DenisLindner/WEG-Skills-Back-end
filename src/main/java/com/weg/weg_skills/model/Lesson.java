@@ -7,7 +7,15 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "lessons")
+@Table(
+        name = "lessons",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_lesson_title_module",
+                        columnNames = {"title", "module_id"}
+                )
+        }
+)
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -21,9 +29,10 @@ public class Lesson {
     private String title;
     @Column
     private String description;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false)
     private Module module;
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "video_media_id")
     private Media video;
 
