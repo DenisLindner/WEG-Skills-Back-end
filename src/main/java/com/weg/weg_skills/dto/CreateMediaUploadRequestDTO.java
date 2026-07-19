@@ -13,6 +13,6 @@ public record CreateMediaUploadRequestDTO(
 
         @NotNull(message = "Size is required")
         @Positive(message = "Size must be positive")
-        long size
+        Long size
 ) {
 }
