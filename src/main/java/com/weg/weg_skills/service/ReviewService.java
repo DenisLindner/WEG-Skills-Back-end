@@ -28,6 +28,10 @@ public class ReviewService {
 
         User user = userRepository.findById(dto.userId()).orElseThrow(RuntimeException::new);
 
+        if (reviewRepository.existsByCourseAndUser(course, user)) {
+            throw new RuntimeException();
+        }
+
         Review review = reviewMapper.toEntity(dto, course, user);
 
         review = reviewRepository.save(review);
