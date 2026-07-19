@@ -2,10 +2,12 @@ package com.weg.weg_skills.service;
 
 import com.weg.weg_skills.config.MinioProperties;
 import com.weg.weg_skills.dto.CreateMediaUploadRequestDTO;
+import com.weg.weg_skills.dto.MediaResponseDTO;
 import com.weg.weg_skills.dto.MinioUploadTicketDTO;
 import com.weg.weg_skills.dto.UploadTicketResponseDTO;
 import com.weg.weg_skills.enums.MediaStatus;
 import com.weg.weg_skills.enums.MediaType;
+import com.weg.weg_skills.mapper.MediaMapper;
 import com.weg.weg_skills.model.Media;
 import com.weg.weg_skills.repository.MediaRepository;
 import com.weg.weg_skills.repository.UserRepository;
@@ -44,6 +46,7 @@ public class MediaService {
     private UserRepository userRepository;
     private MinioService minioService;
     private MinioProperties minioProperties;
+    private MediaMapper mediaMapper;
 
     @Transactional
     public CreatedMediaUpload createCourseImageUpload(
@@ -171,11 +174,11 @@ public class MediaService {
     }
 
     @Transactional(noRollbackFor = InvalidPropertiesFormatException.class)
-    public Media completeUpload(Long mediaId) throws InvalidPropertiesFormatException {
+    public MediaResponseDTO completeUpload(Long mediaId) throws InvalidPropertiesFormatException {
         Media media = findById(mediaId);
 
         if (media.isReady()) {
-            return media;
+            return mediaMapper.toResponse(media);
         }
 
         if (!media.isPendingUpload()) {
@@ -215,7 +218,7 @@ public class MediaService {
 
         media.markAsReady(metadata.size());
 
-        return media;
+        return mediaMapper.toResponse(media);
     }
 
     @Transactional(readOnly = true)
