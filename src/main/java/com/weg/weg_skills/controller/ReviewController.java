@@ -16,30 +16,30 @@ import java.util.List;
 @RestController
 @RequestMapping(path = "/reviews")
 @AllArgsConstructor
-@Tag(name = "Avaliações", description = "Endpoints para gerenciamento de avaliações dos cursos")
+@Tag(name = "Reviews", description = "Endpoints for managing course evaluations")
 public class ReviewController {
     private ReviewService reviewService;
 
     @PostMapping
-    @Operation(summary = "Cria uma nova avaliação para um curso")
+    @Operation(summary = "Creates a new assessment for a course")
     public ResponseEntity<ReviewResponseDTO> create(@RequestBody @Valid ReviewCreateRequestDTO dto) {
         return ResponseEntity.status(201).body(reviewService.create(dto));
     }
 
     @GetMapping(path = "/{courseId}")
-    @Operation(summary = "Lista todas as avaliações de um curso específico")
+    @Operation(summary = "Lists all reviews for a specific course")
     public ResponseEntity<List<ReviewResponseDTO>> findAllByCourse(@PathVariable Long courseId) {
         return ResponseEntity.status(200).body(reviewService.findAllByCourse(courseId));
     }
 
     @PatchMapping(path = "/{id}")
-    @Operation(summary = "Atualiza parcialmente uma avaliação")
+    @Operation(summary = "Partially updates an evaluation")
     public ResponseEntity<ReviewResponseDTO> update(@PathVariable Long id, @RequestBody @Valid ReviewUpdateRequestDTO dto) {
         return ResponseEntity.status(200).body(reviewService.update(id, dto));
     }
 
     @DeleteMapping(path = "/{id}")
-    @Operation(summary = "Exclui uma avaliação pelo ID")
+    @Operation(summary = "Deletes a review by ID")
     public ResponseEntity<Void> deleteById(@PathVariable Long id) {
         reviewService.deleteById(id);
         return ResponseEntity.status(204).build();
