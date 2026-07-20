@@ -8,10 +8,15 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.jspecify.annotations.NonNull;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 @Entity
@@ -20,7 +25,7 @@ import java.util.List;
 @NoArgsConstructor
 @Getter
 @Setter
-public class User {
+public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -29,8 +34,8 @@ public class User {
     private String name;
     @Column(nullable = false, length = 128, unique = true)
     private String email;
-    @Column(name = "password_hash", length = 255)
-    private String passwordHash;
+    @Column(name = "password_hash", nullable = false)
+    private String password;
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role = UserRole.STUDENT;
@@ -60,9 +65,27 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    public User(String name, String email, String passwordHash) {
+    public User(String name, String email, String passwordHash, UserRole role) {
         this.name = name;
         this.email = email;
-        this.passwordHash = passwordHash;
+        this.password = passwordHash;
+        this.role = role;
+    }
+
+    @Override
+    public @NonNull Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(
+                new SimpleGrantedAuthority(role.asAuthority())
+        );
+    }
+
+    @Override
+    public @NonNull String getUsername() {
+        return email;
+    }
+
+    @Override
+    public String getPassword() {
+        return password;
     }
 }

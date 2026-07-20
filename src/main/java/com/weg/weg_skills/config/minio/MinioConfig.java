@@ -1,4 +1,4 @@
-package com.weg.weg_skills.config;
+package com.weg.weg_skills.config.minio;
 
 import io.minio.MinioClient;
 import org.springframework.context.annotation.Bean;
