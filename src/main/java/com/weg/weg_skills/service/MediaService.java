@@ -5,8 +5,10 @@ import com.weg.weg_skills.dto.CreateMediaUploadRequestDTO;
 import com.weg.weg_skills.dto.MediaResponseDTO;
 import com.weg.weg_skills.dto.MinioUploadTicketDTO;
 import com.weg.weg_skills.dto.UploadTicketResponseDTO;
+import com.weg.weg_skills.enums.InvalidUpload;
 import com.weg.weg_skills.enums.MediaStatus;
 import com.weg.weg_skills.enums.MediaType;
+import com.weg.weg_skills.exceptions.*;
 import com.weg.weg_skills.mapper.MediaMapper;
 import com.weg.weg_skills.model.Media;
 import com.weg.weg_skills.repository.MediaRepository;
@@ -17,7 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.InvalidPropertiesFormatException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -137,7 +138,7 @@ public class MediaService {
             String objectKey,
             long maximumSize
     ) {
-        // User user = userRepository.findById(userId).orElseThrow(RuntimeException::new);
+        // User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
         String originalFilename = sanitizeFilename(dto.fileName());
 
@@ -173,8 +174,8 @@ public class MediaService {
         );
     }
 
-    @Transactional(noRollbackFor = InvalidPropertiesFormatException.class)
-    public MediaResponseDTO completeUpload(Long mediaId) throws InvalidPropertiesFormatException {
+    @Transactional(noRollbackFor = MediaMetadataMismatchException.class)
+    public MediaResponseDTO completeUpload(Long mediaId) {
         Media media = findById(mediaId);
 
         if (media.isReady()) {
@@ -182,7 +183,7 @@ public class MediaService {
         }
 
         if (!media.isPendingUpload()) {
-            throw new IllegalStateException();
+            throw new InvalidMediaStateException(media.getMediaStatus());
         }
 
         StatObjectResponse metadata =
@@ -211,9 +212,7 @@ public class MediaService {
                 );
             }
 
-            throw new InvalidPropertiesFormatException(
-                    "Uploaded file does not match the expected metadata"
-            );
+            throw new MediaMetadataMismatchException();
         }
 
         media.markAsReady(metadata.size());
@@ -226,7 +225,7 @@ public class MediaService {
         Media media = findReadMediaById(mediaId);
 
         if (media.getMediaType() == MediaType.LESSON_VIDEO) {
-            throw new RuntimeException();
+            throw new InvalidMediaOperationException();
         }
 
         return minioService.createPublicUrl(
@@ -240,7 +239,7 @@ public class MediaService {
         Media media = findReadMediaById(mediaId);
 
         if (media.getMediaType() != MediaType.LESSON_VIDEO) {
-            throw new RuntimeException();
+            throw new InvalidMediaOperationException();
         }
 
         return minioService.createPrivateReadUrl(
@@ -267,25 +266,25 @@ public class MediaService {
         Media media = findById(mediaId);
 
         if (!media.isReady()) {
-            throw new RuntimeException();
+            throw new MediaNotReadyException();
         }
 
         return media;
     }
 
     private Media findById(Long mediaId) {
-        return mediaRepository.findById(mediaId).orElseThrow(RuntimeException::new);
+        return mediaRepository.findById(mediaId).orElseThrow(() -> new ResourceNotFoundException("Media", mediaId));
     }
 
     private void validateImage(CreateMediaUploadRequestDTO dto) {
         validateCommon(dto);
 
         if (!ALLOWED_IMAGE_TYPES.contains(dto.contentType())) {
-            throw new RuntimeException();
+            throw new InvalidUploadException(InvalidUpload.UNSUPPORTED_CONTENT_TYPE);
         }
 
         if (dto.size() > MAX_IMAGE_SIZE) {
-            throw new RuntimeException();
+            throw new InvalidUploadException(InvalidUpload.FILE_TOO_LARGE);
         }
     }
 
@@ -293,17 +292,17 @@ public class MediaService {
         validateCommon(dto);
 
         if (!ALLOWED_VIDEO_TYPES.contains(dto.contentType())) {
-            throw new RuntimeException();
+            throw new InvalidUploadException(InvalidUpload.UNSUPPORTED_CONTENT_TYPE);
         }
 
         if (dto.size() > MAX_VIDEO_SIZE) {
-            throw new RuntimeException();
+            throw new InvalidUploadException(InvalidUpload.FILE_TOO_LARGE);
         }
     }
 
     private void validateCommon(CreateMediaUploadRequestDTO dto) {
         if (dto.size() <= 0) {
-            throw new RuntimeException();
+            throw new InvalidUploadException(InvalidUpload.INVALID_FILE_SIZE);
         }
     }
 
@@ -313,7 +312,7 @@ public class MediaService {
             case "image/png" -> "png";
             case "image/webp" -> "webp";
             case "video/mp4" -> "mp4";
-            default -> throw new RuntimeException();
+            default -> throw new InvalidUploadException(InvalidUpload.UNSUPPORTED_CONTENT_TYPE);
         };
     }
 

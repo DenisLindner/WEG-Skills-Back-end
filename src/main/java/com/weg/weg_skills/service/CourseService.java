@@ -1,6 +1,8 @@
 package com.weg.weg_skills.service;
 
 import com.weg.weg_skills.dto.*;
+import com.weg.weg_skills.exceptions.DuplicateResourceException;
+import com.weg.weg_skills.exceptions.ResourceNotFoundException;
 import com.weg.weg_skills.mapper.CourseMapper;
 import com.weg.weg_skills.model.Course;
 import com.weg.weg_skills.repository.CourseRepository;
@@ -19,7 +21,7 @@ public class CourseService {
 
     public CourseResponseDTO create(CourseCreateRequestDTO dto) {
         if (courseRepository.existsByTitleIgnoreCase(dto.title())) {
-            throw new RuntimeException();
+            throw new DuplicateResourceException("Course", "title", dto.title());
         }
 
         Course course = courseMapper.toEntity(dto);
@@ -31,7 +33,7 @@ public class CourseService {
 
     @Transactional
     public UploadTicketResponseDTO uploadImage(Long id, CreateMediaUploadRequestDTO dto) {
-        Course course = courseRepository.findById(id).orElseThrow(RuntimeException::new);
+        Course course = courseRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Course", id));
 
         CreatedMediaUpload createdMedia = mediaService.createCourseImageUpload(course.getId(), null, dto);
 
@@ -53,17 +55,17 @@ public class CourseService {
     }
 
     public CourseResponseDTO findById(Long id) {
-        Course course = courseRepository.findById(id).orElseThrow(RuntimeException::new);
+        Course course = courseRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Course", id));
 
         return courseMapper.toResponse(course, course.getImage() != null && course.getImage().isReady() ? mediaService.getPublicUrl(course.getImage().getId()) : null);
     }
 
     public CourseResponseDTO update(Long id, CourseUpdateRequestDTO dto) {
-        Course course = courseRepository.findById(id).orElseThrow(RuntimeException::new);
+        Course course = courseRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Course", id));
 
         if (dto.title() != null) {
-            if (!dto.title().equals(course.getTitle()) && courseRepository.existsByTitleIgnoreCase(dto.title())) {
-                throw new RuntimeException();
+            if (!dto.title().equalsIgnoreCase(course.getTitle()) && courseRepository.existsByTitleIgnoreCase(dto.title())) {
+                throw new DuplicateResourceException("Course", "title", dto.title());
             }
             course.setTitle(dto.title());
         }
@@ -79,7 +81,7 @@ public class CourseService {
 
     public void deleteById(Long id) {
         if (!courseRepository.existsById(id)) {
-            throw new RuntimeException();
+            throw new ResourceNotFoundException("Course", id);
         }
 
         courseRepository.deleteById(id);

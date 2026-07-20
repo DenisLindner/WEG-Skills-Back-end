@@ -2,6 +2,7 @@ package com.weg.weg_skills.service;
 
 import com.weg.weg_skills.config.MinioProperties;
 import com.weg.weg_skills.dto.MinioUploadTicketDTO;
+import com.weg.weg_skills.exceptions.StorageServiceException;
 import io.minio.*;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -48,7 +49,7 @@ public class MinioService {
                     expiresAt.toInstant()
             );
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new StorageServiceException("Failed to generate upload ticket", e);
         }
     }
 
@@ -64,7 +65,7 @@ public class MinioService {
                             .build()
             );
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new StorageServiceException("Failed to get object metadata", e);
         }
     }
 
@@ -87,7 +88,7 @@ public class MinioService {
                             .build()
             );
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new StorageServiceException("Failed to create private url", e);
         }
     }
 
@@ -114,7 +115,7 @@ public class MinioService {
                             .build()
             );
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new StorageServiceException("Failed to delete object", e);
         }
     }
 

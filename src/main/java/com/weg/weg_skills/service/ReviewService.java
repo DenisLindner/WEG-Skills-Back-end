@@ -3,6 +3,8 @@ package com.weg.weg_skills.service;
 import com.weg.weg_skills.dto.ReviewCreateRequestDTO;
 import com.weg.weg_skills.dto.ReviewResponseDTO;
 import com.weg.weg_skills.dto.ReviewUpdateRequestDTO;
+import com.weg.weg_skills.exceptions.ResourceNotFoundException;
+import com.weg.weg_skills.exceptions.ReviewAlreadyExistsException;
 import com.weg.weg_skills.mapper.ReviewMapper;
 import com.weg.weg_skills.model.Course;
 import com.weg.weg_skills.model.Review;
@@ -24,12 +26,12 @@ public class ReviewService {
     private UserRepository userRepository;
 
     public ReviewResponseDTO create(ReviewCreateRequestDTO dto) {
-        Course course = courseRepository.findById(dto.courseId()).orElseThrow(RuntimeException::new);
+        Course course = courseRepository.findById(dto.courseId()).orElseThrow(() -> new ResourceNotFoundException("Course", dto.courseId()));
 
-        User user = userRepository.findById(dto.userId()).orElseThrow(RuntimeException::new);
+        User user = userRepository.findById(dto.userId()).orElseThrow(() -> new ResourceNotFoundException("User", dto.userId()));
 
         if (reviewRepository.existsByCourseAndUser(course, user)) {
-            throw new RuntimeException();
+            throw new ReviewAlreadyExistsException();
         }
 
         Review review = reviewMapper.toEntity(dto, course, user);
@@ -41,7 +43,7 @@ public class ReviewService {
 
     public List<ReviewResponseDTO> findAllByCourse(Long courseId) {
         if (!courseRepository.existsById(courseId)) {
-            throw new RuntimeException();
+            throw new ResourceNotFoundException("Course", courseId);
         }
 
         List<Review> reviews = reviewRepository.findAllByCourseId(courseId);
@@ -50,7 +52,7 @@ public class ReviewService {
     }
 
     public ReviewResponseDTO update(Long id, ReviewUpdateRequestDTO dto) {
-        Review review = reviewRepository.findById(id).orElseThrow(RuntimeException::new);
+        Review review = reviewRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Review", id));
 
         review.setRate(dto.rate());
 
@@ -61,7 +63,7 @@ public class ReviewService {
 
     public void deleteById(Long id) {
         if (!reviewRepository.existsById(id)) {
-            throw new RuntimeException();
+            throw new ResourceNotFoundException("Review", id);
         }
 
         reviewRepository.deleteById(id);
