@@ -3,6 +3,7 @@ package com.weg.weg_skills.exceptions;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -79,5 +80,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<String> dataIntegrityViolation() {
         return ResponseEntity.status(409).body("Data integrity conflict");
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<String> invalidCredentials(InvalidCredentialsException ex) {
+        return ResponseEntity.status(401).body(ex.getMessage());
+    }
+    @ExceptionHandler(UsernameNotFoundException.class)
+    public ResponseEntity<String> usernameNotFound(UsernameNotFoundException ex) {
+        return ResponseEntity.status(404).body(ex.getMessage());
     }
 }
