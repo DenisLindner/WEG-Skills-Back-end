@@ -2,6 +2,7 @@ package com.weg.weg_skills.service;
 
 import com.weg.weg_skills.dto.UserCreateRequestDTO;
 import com.weg.weg_skills.dto.UserResponseDTO;
+import com.weg.weg_skills.exceptions.DuplicateResourceException;
 import com.weg.weg_skills.mapper.UserMapper;
 import com.weg.weg_skills.model.User;
 import com.weg.weg_skills.repository.UserRepository;
@@ -16,7 +17,7 @@ public class UserService {
 
     public UserResponseDTO create(UserCreateRequestDTO dto) {
         if (userRepository.existsByEmail(dto.email())) {
-            throw new RuntimeException();
+            throw new DuplicateResourceException("User", "email", dto.email());
         }
 
         User user = userMapper.toEntity(dto);

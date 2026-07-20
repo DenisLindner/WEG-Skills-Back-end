@@ -1,6 +1,8 @@
 package com.weg.weg_skills.service;
 
 import com.weg.weg_skills.dto.*;
+import com.weg.weg_skills.exceptions.DuplicateResourceException;
+import com.weg.weg_skills.exceptions.ResourceNotFoundException;
 import com.weg.weg_skills.mapper.LessonMapper;
 import com.weg.weg_skills.model.Lesson;
 import com.weg.weg_skills.model.Module;
@@ -22,10 +24,10 @@ public class LessonService {
 
     public LessonResponseDTO create(LessonCreateRequestDTO dto) {
         Module module = moduleRepository.findById(dto.moduleId())
-                .orElseThrow(() -> new RuntimeException("Module not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Module", dto.moduleId()));
 
         if (lessonRepository.existsByModuleAndTitleIgnoreCase(module, dto.title())) {
-            throw new RuntimeException("A lesson with this title already exists in this module");
+            throw new DuplicateResourceException("Lesson", "title", dto.title());
         }
 
         Lesson lesson = lessonMapper.toEntity(dto, module);
@@ -37,7 +39,7 @@ public class LessonService {
 
     @Transactional
     public UploadTicketResponseDTO uploadVideo(Long id, CreateMediaUploadRequestDTO dto) {
-        Lesson lesson = lessonRepository.findById(id).orElseThrow(RuntimeException::new);
+        Lesson lesson = lessonRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
 
         CreatedMediaUpload createdMedia = mediaService.createLessonVideoUpload(lesson.getModule().getCourse().getId(), lesson.getModule().getId(), lesson.getId(), null, dto);
 
@@ -52,7 +54,7 @@ public class LessonService {
 
     public List<LessonResponseDTO> findAllByModule(Long moduleId) {
         if (!moduleRepository.existsById(moduleId)) {
-            throw new RuntimeException();
+            throw new ResourceNotFoundException("Module", moduleId);
         }
 
         List<Lesson> lessons = lessonRepository.findAllByModuleId(moduleId);
@@ -61,19 +63,19 @@ public class LessonService {
     }
 
     public LessonDetailsResponseDTO findById(Long id) {
-        Lesson lesson = lessonRepository.findById(id).orElseThrow(RuntimeException::new);
+        Lesson lesson = lessonRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
 
         return lessonMapper.toResponseDetails(lesson, lesson.getVideo() != null && lesson.getVideo().isReady() ? mediaService.getPlaybackVideoUrl(lesson.getVideo().getId()): null);
     }
 
     public LessonResponseDTO update(Long id, LessonUpdateRequestDTO dto) {
         Lesson lesson = lessonRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Lesson not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
 
         if (dto.title() != null) {
-            if (!dto.title().equals(lesson.getTitle()) &&
+            if (!dto.title().equalsIgnoreCase(lesson.getTitle()) &&
                     lessonRepository.existsByModuleAndTitleIgnoreCase(lesson.getModule(), dto.title())) {
-                throw new RuntimeException("A lesson with this title already exists in this module");
+                throw new DuplicateResourceException("Lesson", "title", dto.title());
             }
             lesson.setTitle(dto.title());
         }
@@ -89,7 +91,7 @@ public class LessonService {
 
     public void deleteById (Long id) {
         if (!lessonRepository.existsById(id)) {
-            throw new RuntimeException();
+            throw new ResourceNotFoundException("Lesson", id);
         }
 
         lessonRepository.deleteById(id);

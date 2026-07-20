@@ -9,8 +9,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.InvalidPropertiesFormatException;
-
 @RestController
 @RequestMapping(path = "/medias")
 @AllArgsConstructor
@@ -18,7 +16,7 @@ public class MediaController {
     private MediaService mediaService;
 
     @PostMapping(path = "/{mediaId}/complete")
-    public ResponseEntity<MediaResponseDTO> completeUpload(@PathVariable Long mediaId) throws InvalidPropertiesFormatException {
+    public ResponseEntity<MediaResponseDTO> completeUpload(@PathVariable Long mediaId) {
         return ResponseEntity.status(200).body(mediaService.completeUpload(mediaId));
     }
 }
