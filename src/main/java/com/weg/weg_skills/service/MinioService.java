@@ -1,6 +1,6 @@
 package com.weg.weg_skills.service;
 
-import com.weg.weg_skills.config.MinioProperties;
+import com.weg.weg_skills.config.minio.MinioProperties;
 import com.weg.weg_skills.dto.MinioUploadTicketDTO;
 import com.weg.weg_skills.exceptions.StorageServiceException;
 import io.minio.*;
