@@ -14,12 +14,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController
 @RequestMapping(path = "/medias")
 @AllArgsConstructor
-@Tag(name = "Mídias", description = "Endpoints para gerenciamento de mídias e arquivos")
+@Tag(name = "Medias", description = "Endpoints for media and file management")
 public class MediaController {
     private MediaService mediaService;
 
     @PostMapping(path = "/{mediaId}/complete")
-    @Operation(summary = "Finaliza e confirma o upload de uma mídia")
+    @Operation(summary = "Finalizes and confirms the media upload")
     public ResponseEntity<MediaResponseDTO> completeUpload(@PathVariable Long mediaId) {
         return ResponseEntity.status(200).body(mediaService.completeUpload(mediaId));
     }
