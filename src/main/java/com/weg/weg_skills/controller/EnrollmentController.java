@@ -16,12 +16,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController
 @RequestMapping("/enrollments")
 @AllArgsConstructor
-@Tag(name = "Matrículas", description = "Endpoints para gerenciamento de matrículas nos cursos")
+@Tag(name = "Enrollments", description = "Endpoints for managing course enrollments")
 public class EnrollmentController {
     private final EnrollmentService enrollmentService;
 
     @PostMapping
-    @Operation(summary = "Realiza a matrícula de um usuário em um curso")
+    @Operation(summary = "Enrolls a user in a course")
     public ResponseEntity<EnrollmentResponseDTO> enroll(@Valid @RequestBody EnrollmentRequestDTO requestDTO) {
         return ResponseEntity.status(201).body(enrollmentService.enrollUser(requestDTO));
     }
