@@ -2,6 +2,10 @@ package com.weg.weg_skills.enums;
 
 public enum UserRole {
     STUDENT,
-    ADMIN,
-    MANAGER
+    INSTRUCTOR,
+    ADMIN;
+
+    public String asAuthority() {
+        return "ROLE_" + name();
+    }
 }
