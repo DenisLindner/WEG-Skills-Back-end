@@ -22,14 +22,14 @@ public class CourseController {
 
     @PostMapping
     @Operation(summary = "Create a new course")
-    public ResponseEntity<CourseResponseDTO> create(@RequestBody @Valid CourseCreateRequestDTO dto) {
-        return ResponseEntity.status(201).body(courseService.create(dto));
+    public ResponseEntity<CourseResponseDTO> create(@RequestBody @Valid CourseCreateRequestDTO dto, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(201).body(courseService.create(dto, jwt.getClaim("userId")));
     }
 
     @PostMapping(path = "/{id}/images/upload")
     @Operation(summary = "Generates a ticket for uploading the course image")
     public ResponseEntity<UploadTicketResponseDTO> uploadImage(@PathVariable Long id, @RequestBody @Valid CreateMediaUploadRequestDTO dto, @AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.status(201).body(courseService.uploadImage(id, dto, jwt.getClaim("userId")));
+        return ResponseEntity.status(201).body(courseService.uploadImage(id, dto, jwt.getClaim("userId"), jwt.getClaim("roles")));
     }
 
     @GetMapping
@@ -46,14 +46,14 @@ public class CourseController {
 
     @PatchMapping(path = "/{id}")
     @Operation(summary = "Partially updates a course")
-    public ResponseEntity<CourseResponseDTO> update(@PathVariable Long id, @RequestBody @Valid CourseUpdateRequestDTO dto) {
-        return ResponseEntity.status(200).body(courseService.update(id, dto));
+    public ResponseEntity<CourseResponseDTO> update(@PathVariable Long id, @RequestBody @Valid CourseUpdateRequestDTO dto, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(200).body(courseService.update(id, dto, jwt.getClaim("userId"), jwt.getClaim("roles")));
     }
 
     @DeleteMapping(path = "/{id}")
     @Operation(summary = "Deletes a course by ID")
-    public ResponseEntity<Void> deleteById(@PathVariable Long id) {
-        courseService.deleteById(id);
+    public ResponseEntity<Void> deleteById(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        courseService.deleteById(id, jwt.getClaim("userId"), jwt.getClaim("roles"));
         return ResponseEntity.status(204).build();
     }
 }
