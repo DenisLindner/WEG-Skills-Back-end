@@ -34,7 +34,7 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(
             HttpSecurity httpSecurity,
             JwtAuthenticationConverter jwtAuthenticationConverter
-    ) throws Exception {
+    ) {
 
         return httpSecurity
                 .csrf(AbstractHttpConfigurer::disable)
