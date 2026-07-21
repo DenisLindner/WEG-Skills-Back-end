@@ -11,6 +11,7 @@ import com.weg.weg_skills.model.Course;
 import com.weg.weg_skills.model.Review;
 import com.weg.weg_skills.model.User;
 import com.weg.weg_skills.repository.CourseRepository;
+import com.weg.weg_skills.repository.EnrollmentRepository;
 import com.weg.weg_skills.repository.ReviewRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
@@ -26,11 +27,16 @@ public class ReviewService {
     private ReviewMapper reviewMapper;
     private CourseRepository courseRepository;
     private UserRepository userRepository;
+    private EnrollmentRepository enrollmentRepository;
 
     public ReviewResponseDTO create(ReviewCreateRequestDTO dto, Long userId) {
         Course course = courseRepository.findById(dto.courseId()).orElseThrow(() -> new ResourceNotFoundException("Course", dto.courseId()));
 
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        if (!enrollmentRepository.existsByUserAndCourse(user, course)) {
+            throw new ForbiddenException();
+        }
 
         if (reviewRepository.existsByCourseAndUser(course, user)) {
             throw new ReviewAlreadyExistsException();
