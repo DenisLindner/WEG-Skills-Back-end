@@ -22,14 +22,14 @@ public class ModuleController {
 
     @PostMapping
     @Operation(summary = "Creates a new module")
-    public ResponseEntity<ModuleResponseDTO> create(@RequestBody @Valid ModuleCreateRequestDTO dto) {
-        return ResponseEntity.status(201).body(moduleService.create(dto));
+    public ResponseEntity<ModuleResponseDTO> create(@RequestBody @Valid ModuleCreateRequestDTO dto, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(201).body(moduleService.create(dto, jwt.getClaim("userId"), jwt.getClaim("roles")));
     }
 
     @PostMapping(path = "/{id}/images/upload")
     @Operation(summary = "Generates a ticket for uploading the module image")
     public ResponseEntity<UploadTicketResponseDTO> uploadImage(@PathVariable Long id, @RequestBody @Valid CreateMediaUploadRequestDTO dto, @AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.status(201).body(moduleService.uploadImage(id, dto, jwt.getClaim("userId")));
+        return ResponseEntity.status(201).body(moduleService.uploadImage(id, dto, jwt.getClaim("userId"), jwt.getClaim("roles")));
     }
 
     @GetMapping(path = "/course/{courseId}")
@@ -46,14 +46,14 @@ public class ModuleController {
 
     @PatchMapping(path = "/{id}")
     @Operation(summary = "Partially updates a module")
-    public ResponseEntity<ModuleResponseDTO> update(@PathVariable Long id, @RequestBody @Valid ModuleUpdateRequestDTO dto) {
-        return ResponseEntity.status(200).body(moduleService.update(id, dto));
+    public ResponseEntity<ModuleResponseDTO> update(@PathVariable Long id, @RequestBody @Valid ModuleUpdateRequestDTO dto, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(200).body(moduleService.update(id, dto, jwt.getClaim("userId"), jwt.getClaim("roles")));
     }
 
     @DeleteMapping(path = "/{id}")
     @Operation(summary = "Deletes a module by ID")
-    public ResponseEntity<Void> deleteById(@PathVariable Long id) {
-        moduleService.deleteById(id);
+    public ResponseEntity<Void> deleteById(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        moduleService.deleteById(id, jwt.getClaim("userId"), jwt.getClaim("roles"));
         return ResponseEntity.status(204).build();
     }
 }

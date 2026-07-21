@@ -34,7 +34,7 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(
             HttpSecurity httpSecurity,
             JwtAuthenticationConverter jwtAuthenticationConverter
-    ) throws Exception {
+    ) {
 
         return httpSecurity
                 .csrf(AbstractHttpConfigurer::disable)
@@ -53,6 +53,12 @@ public class SecurityConfig {
                                 HttpMethod.POST,
                                 "/auth/register",
                                 "/auth/login"
+                        ).permitAll()
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/docs/**",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**"
                         ).permitAll()
 
                         .requestMatchers("/admin/**")
@@ -77,7 +83,7 @@ public class SecurityConfig {
                                 "/courses/**",
                                 "/modules/**",
                                 "/lessons/**"
-                        ).hasRole("ADMIN")
+                        ).hasAnyRole("ADMIN", "INSTRUCTOR")
 
                         .anyRequest().authenticated()
                 )

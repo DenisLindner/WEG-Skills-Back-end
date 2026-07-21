@@ -176,8 +176,12 @@ public class MediaService {
     }
 
     @Transactional(noRollbackFor = MediaMetadataMismatchException.class)
-    public MediaResponseDTO completeUpload(Long mediaId) {
+    public MediaResponseDTO completeUpload(Long mediaId, Long userId) {
         Media media = findById(mediaId);
+
+        if (!media.getUser().getId().equals(userId)) {
+            throw new ForbiddenException();
+        }
 
         if (media.isReady()) {
             return mediaMapper.toResponse(media);

@@ -27,6 +27,9 @@ public class Course {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "image_media_id")
     private Media image;
+    @ManyToOne
+    @JoinColumn(nullable = false)
+    private User instructor;
 
     @OneToMany(mappedBy = "course", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Module> modules = new ArrayList<>();
@@ -35,8 +38,9 @@ public class Course {
     @OneToMany(mappedBy = "course", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Enrollment> enrollments = new ArrayList<>();
 
-    public Course(String title, String description) {
+    public Course(String title, String description, User user) {
         this.title = title;
         this.description = description;
+        this.instructor = user;
     }
 }

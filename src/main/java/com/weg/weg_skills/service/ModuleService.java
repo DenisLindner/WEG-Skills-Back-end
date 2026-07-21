@@ -1,7 +1,9 @@
 package com.weg.weg_skills.service;
 
 import com.weg.weg_skills.dto.*;
+import com.weg.weg_skills.enums.UserRole;
 import com.weg.weg_skills.exceptions.DuplicateResourceException;
+import com.weg.weg_skills.exceptions.ForbiddenException;
 import com.weg.weg_skills.exceptions.ResourceNotFoundException;
 import com.weg.weg_skills.mapper.ModuleMapper;
 import com.weg.weg_skills.model.Course;
@@ -24,9 +26,15 @@ public class ModuleService {
     private MediaService mediaService;
     private UserRepository userRepository;
 
-    public ModuleResponseDTO create(ModuleCreateRequestDTO dto) {
+    public ModuleResponseDTO create(ModuleCreateRequestDTO dto, Long userId, List<String> roles) {
         Course course = courseRepository.findById(dto.courseId())
                 .orElseThrow(() -> new ResourceNotFoundException("Course", dto.courseId()));
+
+        if (!course.getInstructor().getId().equals(userId)) {
+            if (!roles.contains(String.valueOf(UserRole.ADMIN))){
+                throw new ForbiddenException();
+            }
+        }
 
         if (moduleRepository.existsByCourseAndTitleIgnoreCase(course, dto.title())) {
             throw new DuplicateResourceException("Module", "title", dto.title());
@@ -40,12 +48,18 @@ public class ModuleService {
     }
 
     @Transactional
-    public UploadTicketResponseDTO uploadImage(Long id, CreateMediaUploadRequestDTO dto, Long userId) {
+    public UploadTicketResponseDTO uploadImage(Long id, CreateMediaUploadRequestDTO dto, Long userId, List<String> roles) {
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User", userId);
         }
 
         Module module = moduleRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Module", id));
+
+        if (!module.getCourse().getInstructor().getId().equals(userId)) {
+            if (!roles.contains(String.valueOf(UserRole.ADMIN))){
+                throw new ForbiddenException();
+            }
+        }
 
         CreatedMediaUpload createdMedia = mediaService.createModuleImageUpload(module.getCourse().getId(), module.getId(), userId, dto);
 
@@ -74,9 +88,15 @@ public class ModuleService {
         return moduleMapper.toResponse(module, module.getImage() != null && module.getImage().isReady() ? mediaService.getPublicUrl(module.getImage().getId()) : null);
     }
 
-    public ModuleResponseDTO update(Long id, ModuleUpdateRequestDTO dto) {
+    public ModuleResponseDTO update(Long id, ModuleUpdateRequestDTO dto, Long userId, List<String> roles) {
         Module module = moduleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Module", id));
+
+        if (!module.getCourse().getInstructor().getId().equals(userId)) {
+            if (!roles.contains(String.valueOf(UserRole.ADMIN))){
+                throw new ForbiddenException();
+            }
+        }
 
         if (dto.title() != null) {
             if (!dto.title().equalsIgnoreCase(module.getTitle()) &&
@@ -95,11 +115,16 @@ public class ModuleService {
         return moduleMapper.toResponse(module, module.getImage() != null && module.getImage().isReady() ? mediaService.getPublicUrl(module.getImage().getId()) : null);
     }
 
-    public void deleteById (Long id) {
-        if (!moduleRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Module", id);
+    public void deleteById (Long id, Long userId, List<String> roles) {
+        Module module = moduleRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Module", id));
+
+        if (!module.getCourse().getInstructor().getId().equals(userId)) {
+            if (!roles.contains(String.valueOf(UserRole.ADMIN))){
+                throw new ForbiddenException();
+            }
         }
 
-        moduleRepository.deleteById(id);
+        moduleRepository.delete(module);
     }
 }

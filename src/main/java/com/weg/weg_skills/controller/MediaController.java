@@ -4,6 +4,8 @@ import com.weg.weg_skills.dto.MediaResponseDTO;
 import com.weg.weg_skills.service.MediaService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,7 +22,7 @@ public class MediaController {
 
     @PostMapping(path = "/{mediaId}/complete")
     @Operation(summary = "Finalizes and confirms the media upload")
-    public ResponseEntity<MediaResponseDTO> completeUpload(@PathVariable Long mediaId) {
-        return ResponseEntity.status(200).body(mediaService.completeUpload(mediaId));
+    public ResponseEntity<MediaResponseDTO> completeUpload(@PathVariable Long mediaId, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(200).body(mediaService.completeUpload(mediaId, jwt.getClaim("userId")));
     }
 }

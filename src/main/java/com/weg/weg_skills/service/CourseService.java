@@ -1,10 +1,13 @@
 package com.weg.weg_skills.service;
 
 import com.weg.weg_skills.dto.*;
+import com.weg.weg_skills.enums.UserRole;
 import com.weg.weg_skills.exceptions.DuplicateResourceException;
+import com.weg.weg_skills.exceptions.ForbiddenException;
 import com.weg.weg_skills.exceptions.ResourceNotFoundException;
 import com.weg.weg_skills.mapper.CourseMapper;
 import com.weg.weg_skills.model.Course;
+import com.weg.weg_skills.model.User;
 import com.weg.weg_skills.repository.CourseRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
@@ -21,12 +24,18 @@ public class CourseService {
     private MediaService mediaService;
     private UserRepository userRepository;
 
-    public CourseResponseDTO create(CourseCreateRequestDTO dto) {
+    public CourseResponseDTO create(CourseCreateRequestDTO dto, Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        if (user.getRole() != UserRole.INSTRUCTOR && user.getRole() != UserRole.ADMIN) {
+            throw new ForbiddenException();
+        }
+
         if (courseRepository.existsByTitleIgnoreCase(dto.title())) {
             throw new DuplicateResourceException("Course", "title", dto.title());
         }
 
-        Course course = courseMapper.toEntity(dto);
+        Course course = courseMapper.toEntity(dto, user);
 
         course = courseRepository.save(course);
 
@@ -34,12 +43,18 @@ public class CourseService {
     }
 
     @Transactional
-    public UploadTicketResponseDTO uploadImage(Long id, CreateMediaUploadRequestDTO dto, Long userId) {
+    public UploadTicketResponseDTO uploadImage(Long id, CreateMediaUploadRequestDTO dto, Long userId, List<String> roles) {
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User", userId);
         }
 
         Course course = courseRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Course", id));
+
+        if (!course.getInstructor().getId().equals(userId)) {
+            if (!roles.contains(String.valueOf(UserRole.ADMIN))){
+                throw new ForbiddenException();
+            }
+        }
 
         CreatedMediaUpload createdMedia = mediaService.createCourseImageUpload(course.getId(), userId, dto);
 
@@ -66,8 +81,14 @@ public class CourseService {
         return courseMapper.toResponse(course, course.getImage() != null && course.getImage().isReady() ? mediaService.getPublicUrl(course.getImage().getId()) : null);
     }
 
-    public CourseResponseDTO update(Long id, CourseUpdateRequestDTO dto) {
+    public CourseResponseDTO update(Long id, CourseUpdateRequestDTO dto, Long userId, List<String> roles) {
         Course course = courseRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Course", id));
+
+        if (!course.getInstructor().getId().equals(userId)) {
+            if (!roles.contains(String.valueOf(UserRole.ADMIN))){
+                throw new ForbiddenException();
+            }
+        }
 
         if (dto.title() != null) {
             if (!dto.title().equalsIgnoreCase(course.getTitle()) && courseRepository.existsByTitleIgnoreCase(dto.title())) {
@@ -85,11 +106,15 @@ public class CourseService {
         return courseMapper.toResponse(course, course.getImage() != null && course.getImage().isReady() ? mediaService.getPublicUrl(course.getImage().getId()) : null);
     }
 
-    public void deleteById(Long id) {
-        if (!courseRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Course", id);
+    public void deleteById(Long id, Long userId, List<String> roles) {
+        Course course = courseRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Course", id));
+
+        if (!course.getInstructor().getId().equals(userId)) {
+            if (!roles.contains(String.valueOf(UserRole.ADMIN))){
+                throw new ForbiddenException();
+            }
         }
 
-        courseRepository.deleteById(id);
+        courseRepository.delete(course);
     }
 }
