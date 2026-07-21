@@ -5,6 +5,8 @@ import com.weg.weg_skills.service.LessonService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,8 +28,8 @@ public class LessonController {
 
     @PostMapping(path = "/{id}/videos/upload")
     @Operation(summary = "Generates a ticket for uploading the class video")
-    public ResponseEntity<UploadTicketResponseDTO> uploadVideo(@PathVariable Long id, @RequestBody @Valid CreateMediaUploadRequestDTO dto) {
-        return ResponseEntity.status(201).body(lessonService.uploadVideo(id, dto));
+    public ResponseEntity<UploadTicketResponseDTO> uploadVideo(@PathVariable Long id, @RequestBody @Valid CreateMediaUploadRequestDTO dto, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(201).body(lessonService.uploadVideo(id, dto, jwt.getClaim("userId")));
     }
 
     @GetMapping(path = "/module/{moduleId}")
@@ -38,8 +40,8 @@ public class LessonController {
 
     @GetMapping(path = "/{id}")
     @Operation(summary = "Retrieves class details by ID")
-    public ResponseEntity<LessonDetailsResponseDTO> findById(@PathVariable Long id) {
-        return ResponseEntity.status(200).body(lessonService.findById(id));
+    public ResponseEntity<LessonDetailsResponseDTO> findById(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(200).body(lessonService.findById(id, jwt.getClaim("userId")));
     }
 
     @PatchMapping(path = "/{id}")
