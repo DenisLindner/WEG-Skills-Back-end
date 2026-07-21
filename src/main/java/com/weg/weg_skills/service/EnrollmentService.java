@@ -22,9 +22,9 @@ public class EnrollmentService {
     private final UserRepository userRepository;
     private final CourseRepository courseRepository;
 
-    public EnrollmentResponseDTO enrollUser(EnrollmentRequestDTO dto) {
-        User user = userRepository.findById(dto.userId())
-                .orElseThrow(() -> new ResourceNotFoundException("User", dto.userId()));
+    public EnrollmentResponseDTO enrollUser(EnrollmentRequestDTO dto, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
         Course course = courseRepository.findById(dto.courseId())
                 .orElseThrow(() -> new ResourceNotFoundException("Course", dto.courseId()));
 
