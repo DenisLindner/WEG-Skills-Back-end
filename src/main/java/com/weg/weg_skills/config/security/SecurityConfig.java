@@ -77,7 +77,7 @@ public class SecurityConfig {
                                 "/courses/**",
                                 "/modules/**",
                                 "/lessons/**"
-                        ).hasRole("ADMIN")
+                        ).hasAnyRole("ADMIN", "INSTRUCTOR")
 
                         .anyRequest().authenticated()
                 )
