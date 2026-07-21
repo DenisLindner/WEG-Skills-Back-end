@@ -6,6 +6,8 @@ import com.weg.weg_skills.service.EnrollmentService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,7 +24,7 @@ public class EnrollmentController {
 
     @PostMapping
     @Operation(summary = "Enrolls a user in a course")
-    public ResponseEntity<EnrollmentResponseDTO> enroll(@Valid @RequestBody EnrollmentRequestDTO requestDTO) {
-        return ResponseEntity.status(201).body(enrollmentService.enrollUser(requestDTO));
+    public ResponseEntity<EnrollmentResponseDTO> enroll(@Valid @RequestBody EnrollmentRequestDTO requestDTO, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(201).body(enrollmentService.enrollUser(requestDTO, jwt.getClaim("userId")));
     }
 }
