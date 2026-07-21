@@ -1,6 +1,7 @@
 package com.weg.weg_skills.service;
 
 import com.weg.weg_skills.dto.*;
+import com.weg.weg_skills.enums.UserRole;
 import com.weg.weg_skills.exceptions.DuplicateResourceException;
 import com.weg.weg_skills.exceptions.ForbiddenException;
 import com.weg.weg_skills.exceptions.ResourceNotFoundException;
@@ -27,9 +28,15 @@ public class LessonService {
     private UserRepository userRepository;
     private EnrollmentRepository enrollmentRepository;
 
-    public LessonResponseDTO create(LessonCreateRequestDTO dto) {
+    public LessonResponseDTO create(LessonCreateRequestDTO dto, Long userId, List<String> roles) {
         Module module = moduleRepository.findById(dto.moduleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Module", dto.moduleId()));
+
+        if (!module.getCourse().getInstructor().getId().equals(userId)) {
+            if (!roles.contains(String.valueOf(UserRole.ADMIN))){
+                throw new ForbiddenException();
+            }
+        }
 
         if (lessonRepository.existsByModuleAndTitleIgnoreCase(module, dto.title())) {
             throw new DuplicateResourceException("Lesson", "title", dto.title());
@@ -43,12 +50,18 @@ public class LessonService {
     }
 
     @Transactional
-    public UploadTicketResponseDTO uploadVideo(Long id, CreateMediaUploadRequestDTO dto, Long userId) {
+    public UploadTicketResponseDTO uploadVideo(Long id, CreateMediaUploadRequestDTO dto, Long userId, List<String> roles) {
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User", userId);
         }
 
         Lesson lesson = lessonRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
+
+        if (!lesson.getModule().getCourse().getInstructor().getId().equals(userId)) {
+            if (!roles.contains(String.valueOf(UserRole.ADMIN))){
+                throw new ForbiddenException();
+            }
+        }
 
         CreatedMediaUpload createdMedia = mediaService.createLessonVideoUpload(lesson.getModule().getCourse().getId(), lesson.getModule().getId(), lesson.getId(), userId, dto);
 
@@ -71,7 +84,7 @@ public class LessonService {
         return lessons.stream().map(lessonMapper::toResponse).toList();
     }
 
-    public LessonDetailsResponseDTO findById(Long id, Long userId) {
+    public LessonDetailsResponseDTO findById(Long id, Long userId, List<String> roles) {
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User", userId);
         }
@@ -79,15 +92,25 @@ public class LessonService {
         Lesson lesson = lessonRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
 
         if (!enrollmentRepository.existsByUserIdAndCourse(userId, lesson.getModule().getCourse())) {
-            throw new ForbiddenException();
+            if (!lesson.getModule().getCourse().getInstructor().getId().equals(userId)) {
+                if (!roles.contains(String.valueOf(UserRole.ADMIN))){
+                    throw new ForbiddenException();
+                }
+            }
         }
 
         return lessonMapper.toResponseDetails(lesson, lesson.getVideo() != null && lesson.getVideo().isReady() ? mediaService.getPlaybackVideoUrl(lesson.getVideo().getId()): null);
     }
 
-    public LessonResponseDTO update(Long id, LessonUpdateRequestDTO dto) {
+    public LessonResponseDTO update(Long id, LessonUpdateRequestDTO dto, Long userId, List<String> roles) {
         Lesson lesson = lessonRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
+
+        if (!lesson.getModule().getCourse().getInstructor().getId().equals(userId)) {
+            if (!roles.contains(String.valueOf(UserRole.ADMIN))){
+                throw new ForbiddenException();
+            }
+        }
 
         if (dto.title() != null) {
             if (!dto.title().equalsIgnoreCase(lesson.getTitle()) &&
@@ -106,11 +129,16 @@ public class LessonService {
         return lessonMapper.toResponse(lesson);
     }
 
-    public void deleteById (Long id) {
-        if (!lessonRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Lesson", id);
+    public void deleteById (Long id, Long userId, List<String> roles) {
+        Lesson lesson = lessonRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
+
+        if (!lesson.getModule().getCourse().getInstructor().getId().equals(userId)) {
+            if (!roles.contains(String.valueOf(UserRole.ADMIN))){
+                throw new ForbiddenException();
+            }
         }
 
-        lessonRepository.deleteById(id);
+        lessonRepository.delete(lesson);
     }
 }
