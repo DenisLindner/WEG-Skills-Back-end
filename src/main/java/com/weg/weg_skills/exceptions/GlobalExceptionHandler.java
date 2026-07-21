@@ -86,8 +86,19 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> invalidCredentials(InvalidCredentialsException ex) {
         return ResponseEntity.status(401).body(ex.getMessage());
     }
+
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<String> usernameNotFound(UsernameNotFoundException ex) {
         return ResponseEntity.status(404).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<String> forbidden(ForbiddenException ex) {
+        return ResponseEntity.status(403).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<String> unauthorized(UnauthorizedException ex) {
+        return ResponseEntity.status(401).body(ex.getMessage());
     }
 }
