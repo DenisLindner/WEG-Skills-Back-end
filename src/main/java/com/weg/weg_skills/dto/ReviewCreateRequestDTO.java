@@ -13,10 +13,6 @@ public record ReviewCreateRequestDTO(
 
         @NotNull(message = "Course ID is required")
         @Positive(message = "Course ID must be a positive number")
-        Long courseId,
-
-        @NotNull(message = "User ID is required")
-        @Positive(message = "User ID must be a positive number")
-        Long userId
+        Long courseId
 ) {
 }

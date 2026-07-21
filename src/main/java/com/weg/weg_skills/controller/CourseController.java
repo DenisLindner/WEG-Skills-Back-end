@@ -5,6 +5,8 @@ import com.weg.weg_skills.service.CourseService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,8 +28,8 @@ public class CourseController {
 
     @PostMapping(path = "/{id}/images/upload")
     @Operation(summary = "Generates a ticket for uploading the course image")
-    public ResponseEntity<UploadTicketResponseDTO> uploadImage(@PathVariable Long id, @RequestBody @Valid CreateMediaUploadRequestDTO dto) {
-        return ResponseEntity.status(201).body(courseService.uploadImage(id, dto));
+    public ResponseEntity<UploadTicketResponseDTO> uploadImage(@PathVariable Long id, @RequestBody @Valid CreateMediaUploadRequestDTO dto, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(201).body(courseService.uploadImage(id, dto, jwt.getClaim("userId")));
     }
 
     @GetMapping

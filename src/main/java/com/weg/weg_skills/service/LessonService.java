@@ -2,12 +2,15 @@ package com.weg.weg_skills.service;
 
 import com.weg.weg_skills.dto.*;
 import com.weg.weg_skills.exceptions.DuplicateResourceException;
+import com.weg.weg_skills.exceptions.ForbiddenException;
 import com.weg.weg_skills.exceptions.ResourceNotFoundException;
 import com.weg.weg_skills.mapper.LessonMapper;
 import com.weg.weg_skills.model.Lesson;
 import com.weg.weg_skills.model.Module;
+import com.weg.weg_skills.repository.EnrollmentRepository;
 import com.weg.weg_skills.repository.LessonRepository;
 import com.weg.weg_skills.repository.ModuleRepository;
+import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +24,8 @@ public class LessonService {
     private LessonMapper lessonMapper;
     private ModuleRepository moduleRepository;
     private MediaService mediaService;
+    private UserRepository userRepository;
+    private EnrollmentRepository enrollmentRepository;
 
     public LessonResponseDTO create(LessonCreateRequestDTO dto) {
         Module module = moduleRepository.findById(dto.moduleId())
@@ -38,10 +43,14 @@ public class LessonService {
     }
 
     @Transactional
-    public UploadTicketResponseDTO uploadVideo(Long id, CreateMediaUploadRequestDTO dto) {
+    public UploadTicketResponseDTO uploadVideo(Long id, CreateMediaUploadRequestDTO dto, Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("User", userId);
+        }
+
         Lesson lesson = lessonRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
 
-        CreatedMediaUpload createdMedia = mediaService.createLessonVideoUpload(lesson.getModule().getCourse().getId(), lesson.getModule().getId(), lesson.getId(), null, dto);
+        CreatedMediaUpload createdMedia = mediaService.createLessonVideoUpload(lesson.getModule().getCourse().getId(), lesson.getModule().getId(), lesson.getId(), userId, dto);
 
         if (lesson.getVideo() != null) {
             mediaService.delete(lesson.getVideo().getId());
@@ -62,8 +71,16 @@ public class LessonService {
         return lessons.stream().map(lessonMapper::toResponse).toList();
     }
 
-    public LessonDetailsResponseDTO findById(Long id) {
+    public LessonDetailsResponseDTO findById(Long id, Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("User", userId);
+        }
+
         Lesson lesson = lessonRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
+
+        if (!enrollmentRepository.existsByUserIdAndCourse(userId, lesson.getModule().getCourse())) {
+            throw new ForbiddenException();
+        }
 
         return lessonMapper.toResponseDetails(lesson, lesson.getVideo() != null && lesson.getVideo().isReady() ? mediaService.getPlaybackVideoUrl(lesson.getVideo().getId()): null);
     }

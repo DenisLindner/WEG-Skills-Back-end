@@ -7,6 +7,8 @@ import com.weg.weg_skills.service.ReviewService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,8 +24,8 @@ public class ReviewController {
 
     @PostMapping
     @Operation(summary = "Creates a new assessment for a course")
-    public ResponseEntity<ReviewResponseDTO> create(@RequestBody @Valid ReviewCreateRequestDTO dto) {
-        return ResponseEntity.status(201).body(reviewService.create(dto));
+    public ResponseEntity<ReviewResponseDTO> create(@RequestBody @Valid ReviewCreateRequestDTO dto, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(201).body(reviewService.create(dto, jwt.getClaim("userId")));
     }
 
     @GetMapping(path = "/{courseId}")
@@ -34,14 +36,14 @@ public class ReviewController {
 
     @PatchMapping(path = "/{id}")
     @Operation(summary = "Partially updates an evaluation")
-    public ResponseEntity<ReviewResponseDTO> update(@PathVariable Long id, @RequestBody @Valid ReviewUpdateRequestDTO dto) {
-        return ResponseEntity.status(200).body(reviewService.update(id, dto));
+    public ResponseEntity<ReviewResponseDTO> update(@PathVariable Long id, @RequestBody @Valid ReviewUpdateRequestDTO dto, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(200).body(reviewService.update(id, dto, jwt.getClaim("userId")));
     }
 
     @DeleteMapping(path = "/{id}")
     @Operation(summary = "Deletes a review by ID")
-    public ResponseEntity<Void> deleteById(@PathVariable Long id) {
-        reviewService.deleteById(id);
+    public ResponseEntity<Void> deleteById(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        reviewService.deleteById(id, jwt.getClaim("userId"));
         return ResponseEntity.status(204).build();
     }
 }

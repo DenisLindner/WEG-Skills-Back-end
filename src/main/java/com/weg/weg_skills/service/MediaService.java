@@ -11,6 +11,7 @@ import com.weg.weg_skills.enums.MediaType;
 import com.weg.weg_skills.exceptions.*;
 import com.weg.weg_skills.mapper.MediaMapper;
 import com.weg.weg_skills.model.Media;
+import com.weg.weg_skills.model.User;
 import com.weg.weg_skills.repository.MediaRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import io.minio.StatObjectResponse;
@@ -138,7 +139,7 @@ public class MediaService {
             String objectKey,
             long maximumSize
     ) {
-        // User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", userId));
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
         String originalFilename = sanitizeFilename(dto.fileName());
 
@@ -150,7 +151,7 @@ public class MediaService {
                 dto.size(),
                 mediaType,
                 MediaStatus.PENDING_UPLOAD,
-                null
+                user
         );
 
         media = mediaRepository.save(media);

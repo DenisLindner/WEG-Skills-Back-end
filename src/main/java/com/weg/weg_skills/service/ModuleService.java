@@ -8,6 +8,7 @@ import com.weg.weg_skills.model.Course;
 import com.weg.weg_skills.model.Module;
 import com.weg.weg_skills.repository.CourseRepository;
 import com.weg.weg_skills.repository.ModuleRepository;
+import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,7 @@ public class ModuleService {
     private ModuleMapper moduleMapper;
     private CourseRepository courseRepository;
     private MediaService mediaService;
+    private UserRepository userRepository;
 
     public ModuleResponseDTO create(ModuleCreateRequestDTO dto) {
         Course course = courseRepository.findById(dto.courseId())
@@ -38,10 +40,14 @@ public class ModuleService {
     }
 
     @Transactional
-    public UploadTicketResponseDTO uploadImage(Long id, CreateMediaUploadRequestDTO dto) {
+    public UploadTicketResponseDTO uploadImage(Long id, CreateMediaUploadRequestDTO dto, Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("User", userId);
+        }
+
         Module module = moduleRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Module", id));
 
-        CreatedMediaUpload createdMedia = mediaService.createModuleImageUpload(module.getCourse().getId(), module.getId(), null, dto);
+        CreatedMediaUpload createdMedia = mediaService.createModuleImageUpload(module.getCourse().getId(), module.getId(), userId, dto);
 
         if (module.getImage() != null) {
             mediaService.delete(module.getImage().getId());

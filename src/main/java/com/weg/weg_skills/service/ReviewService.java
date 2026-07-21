@@ -3,6 +3,7 @@ package com.weg.weg_skills.service;
 import com.weg.weg_skills.dto.ReviewCreateRequestDTO;
 import com.weg.weg_skills.dto.ReviewResponseDTO;
 import com.weg.weg_skills.dto.ReviewUpdateRequestDTO;
+import com.weg.weg_skills.exceptions.ForbiddenException;
 import com.weg.weg_skills.exceptions.ResourceNotFoundException;
 import com.weg.weg_skills.exceptions.ReviewAlreadyExistsException;
 import com.weg.weg_skills.mapper.ReviewMapper;
@@ -16,6 +17,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @AllArgsConstructor
@@ -25,10 +27,10 @@ public class ReviewService {
     private CourseRepository courseRepository;
     private UserRepository userRepository;
 
-    public ReviewResponseDTO create(ReviewCreateRequestDTO dto) {
+    public ReviewResponseDTO create(ReviewCreateRequestDTO dto, Long userId) {
         Course course = courseRepository.findById(dto.courseId()).orElseThrow(() -> new ResourceNotFoundException("Course", dto.courseId()));
 
-        User user = userRepository.findById(dto.userId()).orElseThrow(() -> new ResourceNotFoundException("User", dto.userId()));
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
         if (reviewRepository.existsByCourseAndUser(course, user)) {
             throw new ReviewAlreadyExistsException();
@@ -51,8 +53,16 @@ public class ReviewService {
         return reviews.stream().map(reviewMapper::toResponse).toList();
     }
 
-    public ReviewResponseDTO update(Long id, ReviewUpdateRequestDTO dto) {
+    public ReviewResponseDTO update(Long id, ReviewUpdateRequestDTO dto, Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("User", userId);
+        }
+
         Review review = reviewRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Review", id));
+
+        if (!Objects.equals(review.getUser().getId(), userId)) {
+            throw new ForbiddenException();
+        }
 
         review.setRate(dto.rate());
 
@@ -61,9 +71,15 @@ public class ReviewService {
         return reviewMapper.toResponse(review);
     }
 
-    public void deleteById(Long id) {
+    public void deleteById(Long id, Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("User", userId);
+        }
         if (!reviewRepository.existsById(id)) {
             throw new ResourceNotFoundException("Review", id);
+        }
+        if (!reviewRepository.existsByIdAndUserId(id, userId)) {
+            throw new ForbiddenException();
         }
 
         reviewRepository.deleteById(id);
