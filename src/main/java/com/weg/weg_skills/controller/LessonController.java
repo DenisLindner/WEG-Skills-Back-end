@@ -22,14 +22,14 @@ public class LessonController {
 
     @PostMapping
     @Operation(summary = "Create a new class")
-    public ResponseEntity<LessonResponseDTO> create(@RequestBody @Valid LessonCreateRequestDTO dto) {
-        return ResponseEntity.status(201).body(lessonService.create(dto));
+    public ResponseEntity<LessonResponseDTO> create(@RequestBody @Valid LessonCreateRequestDTO dto, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(201).body(lessonService.create(dto, jwt.getClaim("userId"), jwt.getClaim("roles")));
     }
 
     @PostMapping(path = "/{id}/videos/upload")
     @Operation(summary = "Generates a ticket for uploading the class video")
     public ResponseEntity<UploadTicketResponseDTO> uploadVideo(@PathVariable Long id, @RequestBody @Valid CreateMediaUploadRequestDTO dto, @AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.status(201).body(lessonService.uploadVideo(id, dto, jwt.getClaim("userId")));
+        return ResponseEntity.status(201).body(lessonService.uploadVideo(id, dto, jwt.getClaim("userId"), jwt.getClaim("roles")));
     }
 
     @GetMapping(path = "/module/{moduleId}")
@@ -41,19 +41,19 @@ public class LessonController {
     @GetMapping(path = "/{id}")
     @Operation(summary = "Retrieves class details by ID")
     public ResponseEntity<LessonDetailsResponseDTO> findById(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.status(200).body(lessonService.findById(id, jwt.getClaim("userId")));
+        return ResponseEntity.status(200).body(lessonService.findById(id, jwt.getClaim("userId"), jwt.getClaim("roles")));
     }
 
     @PatchMapping(path = "/{id}")
     @Operation(summary = "Partially updates a class")
-    public ResponseEntity<LessonResponseDTO> update(@PathVariable Long id, @RequestBody @Valid LessonUpdateRequestDTO dto) {
-        return ResponseEntity.status(200).body(lessonService.update(id, dto));
+    public ResponseEntity<LessonResponseDTO> update(@PathVariable Long id, @RequestBody @Valid LessonUpdateRequestDTO dto, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(200).body(lessonService.update(id, dto, jwt.getClaim("userId"), jwt.getClaim("roles")));
     }
 
     @DeleteMapping(path = "/{id}")
     @Operation(summary = "Deletes a class by ID")
-    public ResponseEntity<Void> deleteById(@PathVariable Long id) {
-        lessonService.deleteById(id);
+    public ResponseEntity<Void> deleteById(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        lessonService.deleteById(id, jwt.getClaim("userId"), jwt.getClaim("roles"));
         return ResponseEntity.status(204).build();
     }
 }
