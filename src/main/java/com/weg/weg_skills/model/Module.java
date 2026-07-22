@@ -33,13 +33,13 @@ public class Module {
 
     @Column(nullable = false, length = 128)
     private String title;
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String description;
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(nullable = false)
+    @JoinColumn(name = "course_id", nullable = false)
     private Course course;
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "image_media_id")
+    @JoinColumn(name = "image_media_id", unique = true)
     private Media image;
 
     @OneToMany(mappedBy = "module", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)

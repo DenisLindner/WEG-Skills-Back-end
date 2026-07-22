@@ -25,13 +25,13 @@ public class Course {
 
     @Column(nullable = false, length = 128, unique = true)
     private String title;
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String description;
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "image_media_id")
+    @JoinColumn(name = "image_media_id", unique = true)
     private Media image;
-    @ManyToOne
-    @JoinColumn(nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "instructor_id", nullable = false)
     private User instructor;
 
     @OneToMany(mappedBy = "course", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)

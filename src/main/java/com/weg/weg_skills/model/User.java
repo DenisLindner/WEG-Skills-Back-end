@@ -50,7 +50,7 @@ public class User implements UserDetails {
     @Column(length = 128)
     private String country;
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "image_media_id")
+    @JoinColumn(name = "image_media_id", unique = true)
     private Media image;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)

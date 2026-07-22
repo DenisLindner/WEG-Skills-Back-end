@@ -27,13 +27,14 @@ public class Enrollment {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(nullable = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(nullable = false)
+    @JoinColumn(name = "course_id", nullable = false)
     private Course course;
 
-    @Column(name = "enrolled_at")
+    @CreationTimestamp
+    @Column(name = "enrolled_at", nullable = false)
     private Instant enrolledAt;
 
     @CreationTimestamp
@@ -47,6 +48,5 @@ public class Enrollment {
     public Enrollment(User user, Course course) {
         this.user = user;
         this.course = course;
-        this.enrolledAt = Instant.now();
     }
 }
