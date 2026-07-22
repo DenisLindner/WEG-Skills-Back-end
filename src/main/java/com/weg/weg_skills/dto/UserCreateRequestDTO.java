@@ -10,7 +10,7 @@ public record UserCreateRequestDTO(
         @Size(
                 min = 3,
                 max = 128,
-                message = "Password must contain between 3 and 128 characters"
+                message = "Name must contain between 3 and 128 characters"
         )
         String name,
 
