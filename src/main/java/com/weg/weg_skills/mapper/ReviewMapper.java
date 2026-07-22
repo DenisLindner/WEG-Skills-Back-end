@@ -13,7 +13,7 @@ public class ReviewMapper {
         return new Review(dto.rate(), course, user);
     }
 
-    public ReviewResponseDTO toResponse(Review review) {
-        return new ReviewResponseDTO(review.getId(), review.getRate(), review.getCourse().getTitle(), review.getUser().getName(), review.getUser().getPictureUrl());
+    public ReviewResponseDTO toResponse(Review review, String url) {
+        return new ReviewResponseDTO(review.getId(), review.getRate(), review.getCourse().getTitle(), review.getUser().getName(), url);
     }
 }

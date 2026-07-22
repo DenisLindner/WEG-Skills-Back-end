@@ -4,14 +4,13 @@ import com.weg.weg_skills.dto.*;
 import com.weg.weg_skills.service.CourseService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
-import java.util.List;
 
 @RestController
 @RequestMapping(path = "/courses")
@@ -34,8 +33,8 @@ public class CourseController {
 
     @GetMapping
     @Operation(summary = "Lists all courses")
-    public ResponseEntity<List<CourseResponseDTO>> findAll() {
-        return ResponseEntity.status(200).body(courseService.findAll());
+    public ResponseEntity<Page<CourseResponseDTO>> findAll(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.status(200).body(courseService.findAll(page, size));
     }
 
     @GetMapping(path = "/{id}")

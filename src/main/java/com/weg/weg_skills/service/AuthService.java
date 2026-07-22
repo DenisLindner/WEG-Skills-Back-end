@@ -6,6 +6,7 @@ import com.weg.weg_skills.dto.RegisterRequestDTO;
 import com.weg.weg_skills.enums.UserRole;
 import com.weg.weg_skills.exceptions.DuplicateResourceException;
 import com.weg.weg_skills.exceptions.InvalidCredentialsException;
+import com.weg.weg_skills.exceptions.UnauthorizedException;
 import com.weg.weg_skills.mapper.AuthMapper;
 import com.weg.weg_skills.mapper.UserMapper;
 import com.weg.weg_skills.model.User;
@@ -53,6 +54,7 @@ public class AuthService {
         return authMapper.toResponse(generatedToken.value(), "Bearer", generatedToken.expiresAt());
     }
 
+    @Transactional
     public AuthResponseDTO login(LoginRequestDTO dto) {
         String email = normalizeEmail(dto.email());
 
@@ -67,7 +69,10 @@ public class AuthService {
 
             User user = (User) authentication.getPrincipal();
 
-            assert user != null;
+            if (user == null) {
+                throw new UnauthorizedException();
+            }
+
             JwtService.GeneratedToken generatedToken =
                     jwtService.generateToken(
                             authentication.getName(),

@@ -12,6 +12,9 @@ import com.weg.weg_skills.repository.CourseRepository;
 import com.weg.weg_skills.repository.ModuleRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,9 +29,9 @@ public class ModuleService {
     private MediaService mediaService;
     private UserRepository userRepository;
 
+    @Transactional
     public ModuleResponseDTO create(ModuleCreateRequestDTO dto, Long userId, List<String> roles) {
-        Course course = courseRepository.findById(dto.courseId())
-                .orElseThrow(() -> new ResourceNotFoundException("Course", dto.courseId()));
+        Course course = courseRepository.findById(dto.courseId()).orElseThrow(() -> new ResourceNotFoundException("Course", dto.courseId()));
 
         if (!course.getInstructor().getId().equals(userId)) {
             if (!roles.contains(String.valueOf(UserRole.ADMIN))){
@@ -36,11 +39,13 @@ public class ModuleService {
             }
         }
 
-        if (moduleRepository.existsByCourseAndTitleIgnoreCase(course, dto.title())) {
-            throw new DuplicateResourceException("Module", "title", dto.title());
+        String title = normalizeString(dto.title());
+        if (moduleRepository.existsByCourseAndTitleIgnoreCase(course, title)) {
+            throw new DuplicateResourceException("Module", "title", title);
         }
 
-        Module module = moduleMapper.toEntity(dto, course);
+        String description = dto.description() != null ? normalizeString(dto.description()) : null;
+        Module module = moduleMapper.toEntity(title, description, course);
 
         module = moduleRepository.save(module);
 
@@ -72,22 +77,33 @@ public class ModuleService {
         return createdMedia.ticket();
     }
 
-    public List<ModuleResponseDTO> findAllByCourse(Long courseId) {
+    @Transactional(readOnly = true)
+    public Page<ModuleResponseDTO> findAllByCourse(Long courseId, int page, int size) {
         if (!courseRepository.existsById(courseId)) {
             throw new ResourceNotFoundException("Course", courseId);
         }
 
-        List<Module> modules = moduleRepository.findAllByCourseId(courseId);
+        if (page < 0 || size <= 0 || size > 100) {
+            throw new IllegalArgumentException();
+        }
 
-        return modules.stream().map(m -> moduleMapper.toResponse(m, m.getImage() != null && m.getImage().isReady() ? mediaService.getPublicUrl(m.getImage().getId()) : null)).toList();
+        Pageable pageable = PageRequest.of(
+                page, size
+        );
+
+        Page<Module> modules = moduleRepository.findAllByCourseIdOrderByCreatedAtDesc(courseId, pageable);
+
+        return modules.map(m -> moduleMapper.toResponse(m, m.getImage() != null && m.getImage().isReady() ? mediaService.getPublicUrl(m.getImage().getId()) : null));
     }
 
+    @Transactional(readOnly = true)
     public ModuleResponseDTO findById(Long id) {
         Module module = moduleRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Module", id));
 
         return moduleMapper.toResponse(module, module.getImage() != null && module.getImage().isReady() ? mediaService.getPublicUrl(module.getImage().getId()) : null);
     }
 
+    @Transactional
     public ModuleResponseDTO update(Long id, ModuleUpdateRequestDTO dto, Long userId, List<String> roles) {
         Module module = moduleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Module", id));
@@ -99,15 +115,16 @@ public class ModuleService {
         }
 
         if (dto.title() != null) {
-            if (!dto.title().equalsIgnoreCase(module.getTitle()) &&
-                    moduleRepository.existsByCourseAndTitleIgnoreCase(module.getCourse(), dto.title())) {
+            String title = normalizeString(dto.title());
+            if (!title.equalsIgnoreCase(module.getTitle()) && moduleRepository.existsByCourseAndTitleIgnoreCase(module.getCourse(), title)) {
                 throw new DuplicateResourceException("Module", "title", dto.title());
             }
-            module.setTitle(dto.title());
+            module.setTitle(title);
         }
 
         if (dto.description() != null) {
-            module.setDescription(dto.description());
+            String description = normalizeString(dto.description());
+            module.setDescription(description);
         }
 
         module = moduleRepository.save(module);
@@ -115,6 +132,7 @@ public class ModuleService {
         return moduleMapper.toResponse(module, module.getImage() != null && module.getImage().isReady() ? mediaService.getPublicUrl(module.getImage().getId()) : null);
     }
 
+    @Transactional
     public void deleteById (Long id, Long userId, List<String> roles) {
         Module module = moduleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Module", id));
@@ -125,6 +143,14 @@ public class ModuleService {
             }
         }
 
+        if (module.getImage() != null) {
+            mediaService.delete(module.getImage().getId());
+        }
+
         moduleRepository.delete(module);
+    }
+
+    private String normalizeString(String value) {
+        return value.trim();
     }
 }

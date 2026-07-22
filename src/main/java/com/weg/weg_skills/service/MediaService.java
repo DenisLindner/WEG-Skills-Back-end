@@ -103,6 +103,30 @@ public class MediaService {
     }
 
     @Transactional
+    public CreatedMediaUpload createUserImageUpload(
+        Long userId,
+        CreateMediaUploadRequestDTO dto
+    ) {
+        validateImage(dto);
+
+        String objectKey = String.format(
+                "users/%d/images/%s.%s",
+                userId,
+                UUID.randomUUID(),
+                getExtension(dto.contentType())
+        );
+
+        return createUpload(
+                userId,
+                dto,
+                MediaType.USER_IMAGE,
+                minioProperties.buckets().publicAssets(),
+                objectKey,
+                MAX_IMAGE_SIZE
+        );
+    }
+
+    @Transactional
     public CreatedMediaUpload createLessonVideoUpload(
         Long courseId,
         Long moduleId,

@@ -4,14 +4,13 @@ import com.weg.weg_skills.dto.*;
 import com.weg.weg_skills.service.ModuleService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
-import java.util.List;
 
 @RestController
 @RequestMapping(path = "/modules")
@@ -34,8 +33,8 @@ public class ModuleController {
 
     @GetMapping(path = "/course/{courseId}")
     @Operation(summary = "Lists all modules of a specific course")
-    public ResponseEntity<List<ModuleResponseDTO>> findAll(@PathVariable Long courseId) {
-        return ResponseEntity.status(200).body(moduleService.findAllByCourse(courseId));
+    public ResponseEntity<Page<ModuleResponseDTO>> findAllByCourse(@PathVariable Long courseId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.status(200).body(moduleService.findAllByCourse(courseId, page, size));
     }
 
     @GetMapping(path = "/{id}")

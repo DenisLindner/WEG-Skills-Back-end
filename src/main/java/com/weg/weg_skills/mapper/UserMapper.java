@@ -11,7 +11,7 @@ public class UserMapper {
         return new User(name, email, passwordHash, role);
     }
 
-    public UserResponseDTO toResponse(User user) {
-        return new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getBirthday(), user.getPhone(), user.getPictureUrl());
+    public UserResponseDTO toResponse(User user, String url) {
+        return new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getBirthday(), user.getPhone(), url);
     }
 }

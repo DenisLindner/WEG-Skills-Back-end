@@ -13,6 +13,9 @@ import com.weg.weg_skills.repository.LessonRepository;
 import com.weg.weg_skills.repository.ModuleRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +31,7 @@ public class LessonService {
     private UserRepository userRepository;
     private EnrollmentRepository enrollmentRepository;
 
+    @Transactional
     public LessonResponseDTO create(LessonCreateRequestDTO dto, Long userId, List<String> roles) {
         Module module = moduleRepository.findById(dto.moduleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Module", dto.moduleId()));
@@ -38,11 +42,13 @@ public class LessonService {
             }
         }
 
-        if (lessonRepository.existsByModuleAndTitleIgnoreCase(module, dto.title())) {
-            throw new DuplicateResourceException("Lesson", "title", dto.title());
+        String title = normalizeString(dto.title());
+        if (lessonRepository.existsByModuleAndTitleIgnoreCase(module, title)) {
+            throw new DuplicateResourceException("Lesson", "title", title);
         }
 
-        Lesson lesson = lessonMapper.toEntity(dto, module);
+        String description = dto.description() != null ? normalizeString(dto.description()) : null;
+        Lesson lesson = lessonMapper.toEntity(title, description, module);
 
         lesson = lessonRepository.save(lesson);
 
@@ -74,16 +80,26 @@ public class LessonService {
         return createdMedia.ticket();
     }
 
-    public List<LessonResponseDTO> findAllByModule(Long moduleId) {
+    @Transactional(readOnly = true)
+    public Page<LessonResponseDTO> findAllByModule(Long moduleId, int page, int size) {
         if (!moduleRepository.existsById(moduleId)) {
             throw new ResourceNotFoundException("Module", moduleId);
         }
 
-        List<Lesson> lessons = lessonRepository.findAllByModuleId(moduleId);
+        if (page < 0 || size <= 0 || size > 100) {
+            throw new IllegalArgumentException();
+        }
 
-        return lessons.stream().map(lessonMapper::toResponse).toList();
+        Pageable pageable = PageRequest.of(
+                page, size
+        );
+
+        Page<Lesson> lessons = lessonRepository.findAllByModuleIdOrderByCreatedAtDesc(moduleId, pageable);
+
+        return lessons.map(lessonMapper::toResponse);
     }
 
+    @Transactional(readOnly = true)
     public LessonDetailsResponseDTO findById(Long id, Long userId, List<String> roles) {
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User", userId);
@@ -102,6 +118,7 @@ public class LessonService {
         return lessonMapper.toResponseDetails(lesson, lesson.getVideo() != null && lesson.getVideo().isReady() ? mediaService.getPlaybackVideoUrl(lesson.getVideo().getId()): null);
     }
 
+    @Transactional
     public LessonResponseDTO update(Long id, LessonUpdateRequestDTO dto, Long userId, List<String> roles) {
         Lesson lesson = lessonRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
@@ -113,15 +130,16 @@ public class LessonService {
         }
 
         if (dto.title() != null) {
-            if (!dto.title().equalsIgnoreCase(lesson.getTitle()) &&
-                    lessonRepository.existsByModuleAndTitleIgnoreCase(lesson.getModule(), dto.title())) {
-                throw new DuplicateResourceException("Lesson", "title", dto.title());
+            String title = normalizeString(dto.title());
+            if (!title.equalsIgnoreCase(lesson.getTitle()) && lessonRepository.existsByModuleAndTitleIgnoreCase(lesson.getModule(), title)) {
+                throw new DuplicateResourceException("Lesson", "title", title);
             }
-            lesson.setTitle(dto.title());
+            lesson.setTitle(title);
         }
 
         if (dto.description() != null) {
-            lesson.setDescription(dto.description());
+            String description = normalizeString(dto.description());
+            lesson.setDescription(description);
         }
 
         lesson = lessonRepository.save(lesson);
@@ -129,6 +147,7 @@ public class LessonService {
         return lessonMapper.toResponse(lesson);
     }
 
+    @Transactional
     public void deleteById (Long id, Long userId, List<String> roles) {
         Lesson lesson = lessonRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
@@ -139,6 +158,14 @@ public class LessonService {
             }
         }
 
+        if (lesson.getVideo() != null) {
+            mediaService.delete(lesson.getVideo().getId());
+        }
+
         lessonRepository.delete(lesson);
+    }
+
+    private String normalizeString(String value) {
+        return value.trim();
     }
 }
