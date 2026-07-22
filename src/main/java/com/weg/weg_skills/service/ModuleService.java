@@ -15,6 +15,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -88,10 +89,11 @@ public class ModuleService {
         }
 
         Pageable pageable = PageRequest.of(
-                page, size
+                page, size,
+                Sort.by("createdAt").descending()
         );
 
-        Page<Module> modules = moduleRepository.findAllByCourseIdOrderByCreatedAtDesc(courseId, pageable);
+        Page<Module> modules = moduleRepository.findAllByCourseId(courseId, pageable);
 
         return modules.map(m -> moduleMapper.toResponse(m, m.getImage() != null && m.getImage().isReady() ? mediaService.getPublicUrl(m.getImage().getId()) : null));
     }

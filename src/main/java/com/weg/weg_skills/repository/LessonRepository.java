@@ -8,5 +8,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface LessonRepository extends JpaRepository<Lesson, Long> {
     Boolean existsByModuleAndTitleIgnoreCase(Module module, String title);
-    Page<Lesson> findAllByModuleIdOrderByCreatedAtDesc(Long moduleId, Pageable pageable);
+    Page<Lesson> findAllByModuleId(Long moduleId, Pageable pageable);
 }

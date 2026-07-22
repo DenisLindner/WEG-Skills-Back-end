@@ -16,6 +16,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -91,10 +92,11 @@ public class LessonService {
         }
 
         Pageable pageable = PageRequest.of(
-                page, size
+                page, size,
+                Sort.by("createdAt").descending()
         );
 
-        Page<Lesson> lessons = lessonRepository.findAllByModuleIdOrderByCreatedAtDesc(moduleId, pageable);
+        Page<Lesson> lessons = lessonRepository.findAllByModuleId(moduleId, pageable);
 
         return lessons.map(lessonMapper::toResponse);
     }

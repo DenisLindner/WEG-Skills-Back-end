@@ -10,5 +10,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ReviewRepository extends JpaRepository<Review, Long> {
     Boolean existsByCourseAndUser(Course course, User user);
     Boolean existsByIdAndUserId(Long id, Long userId);
-    Page<Review> findAllByCourseIdOrderByCreatedAtDesc(Long courseId, Pageable pageable);
+    Page<Review> findAllByCourseId(Long courseId, Pageable pageable);
 }
