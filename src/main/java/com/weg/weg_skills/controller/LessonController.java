@@ -4,6 +4,7 @@ import com.weg.weg_skills.dto.*;
 import com.weg.weg_skills.service.LessonService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -34,8 +35,8 @@ public class LessonController {
 
     @GetMapping(path = "/module/{moduleId}")
     @Operation(summary = "Lists all lessons in a specific module")
-    public ResponseEntity<List<LessonResponseDTO>> findAllByModule(@PathVariable Long moduleId) {
-        return ResponseEntity.status(200).body(lessonService.findAllByModule(moduleId));
+    public ResponseEntity<Page<LessonResponseDTO>> findAllByModule(@PathVariable Long moduleId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.status(200).body(lessonService.findAllByModule(moduleId, page, size));
     }
 
     @GetMapping(path = "/{id}")
