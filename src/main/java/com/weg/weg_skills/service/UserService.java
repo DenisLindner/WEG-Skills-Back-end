@@ -38,11 +38,11 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public Page<EnrollmentResponseDTO> getMeEnrollments(Long id, int page, int size) {
-        User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User", id));
-
         if (page < 0 || size <= 0 || size > 100) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Pagination must have page >= 0, size > 0, and size <= 100");
         }
+
+        User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User", id));
 
         Pageable pageable = PageRequest.of(
                 page, size,
