@@ -11,6 +11,9 @@ import com.weg.weg_skills.model.User;
 import com.weg.weg_skills.repository.CourseRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +27,7 @@ public class CourseService {
     private MediaService mediaService;
     private UserRepository userRepository;
 
+    @Transactional
     public CourseResponseDTO create(CourseCreateRequestDTO dto, Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
@@ -31,11 +35,13 @@ public class CourseService {
             throw new ForbiddenException();
         }
 
-        if (courseRepository.existsByTitleIgnoreCase(dto.title())) {
-            throw new DuplicateResourceException("Course", "title", dto.title());
+        String title = normalizeString(dto.title());
+        if (courseRepository.existsByTitleIgnoreCase(title)) {
+            throw new DuplicateResourceException("Course", "title", title);
         }
 
-        Course course = courseMapper.toEntity(dto, user);
+        String description = dto.description() != null ? normalizeString(dto.description()) : null;
+        Course course = courseMapper.toEntity(title, description, user);
 
         course = courseRepository.save(course);
 
@@ -67,20 +73,31 @@ public class CourseService {
         return createdMedia.ticket();
     }
 
-    public List<CourseResponseDTO> findAll() {
-        List<Course> courses = courseRepository.findAll();
+    @Transactional(readOnly = true)
+    public Page<CourseResponseDTO> findAll(int page, int size) {
+        if (page < 0 || size <= 0 || size > 100) {
+            throw new IllegalArgumentException();
+        }
 
-        return courses.stream().map(c ->
+        Pageable pageable = PageRequest.of(
+                page, size
+        );
+
+        Page<Course> courses = courseRepository.findAllOrderByCreatedAtDesc(pageable);
+
+        return courses.map(c ->
             courseMapper.toResponse(c, c.getImage() != null && c.getImage().isReady() ? mediaService.getPublicUrl(c.getImage().getId()) : null)
-        ).toList();
+        );
     }
 
+    @Transactional(readOnly = true)
     public CourseResponseDTO findById(Long id) {
         Course course = courseRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Course", id));
 
         return courseMapper.toResponse(course, course.getImage() != null && course.getImage().isReady() ? mediaService.getPublicUrl(course.getImage().getId()) : null);
     }
 
+    @Transactional
     public CourseResponseDTO update(Long id, CourseUpdateRequestDTO dto, Long userId, List<String> roles) {
         Course course = courseRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Course", id));
 
@@ -91,14 +108,16 @@ public class CourseService {
         }
 
         if (dto.title() != null) {
-            if (!dto.title().equalsIgnoreCase(course.getTitle()) && courseRepository.existsByTitleIgnoreCase(dto.title())) {
-                throw new DuplicateResourceException("Course", "title", dto.title());
+            String title = normalizeString(dto.title());
+            if (!title.equalsIgnoreCase(course.getTitle()) && courseRepository.existsByTitleIgnoreCase(title)) {
+                throw new DuplicateResourceException("Course", "title", title);
             }
-            course.setTitle(dto.title());
+            course.setTitle(title);
         }
 
         if (dto.description() != null) {
-            course.setDescription(dto.description());
+            String description = normalizeString(dto.description());
+            course.setDescription(description);
         }
 
         course = courseRepository.save(course);
@@ -106,6 +125,7 @@ public class CourseService {
         return courseMapper.toResponse(course, course.getImage() != null && course.getImage().isReady() ? mediaService.getPublicUrl(course.getImage().getId()) : null);
     }
 
+    @Transactional
     public void deleteById(Long id, Long userId, List<String> roles) {
         Course course = courseRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Course", id));
 
@@ -115,6 +135,14 @@ public class CourseService {
             }
         }
 
+        if (course.getImage() != null) {
+            mediaService.delete(course.getImage().getId());
+        }
+
         courseRepository.delete(course);
+    }
+
+    private String normalizeString(String value) {
+        return value.trim();
     }
 }
