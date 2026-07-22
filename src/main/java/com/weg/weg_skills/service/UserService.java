@@ -2,17 +2,10 @@ package com.weg.weg_skills.service;
 
 import com.weg.weg_skills.dto.*;
 import com.weg.weg_skills.exceptions.*;
-import com.weg.weg_skills.mapper.EnrollmentMapper;
 import com.weg.weg_skills.mapper.UserMapper;
-import com.weg.weg_skills.model.Enrollment;
 import com.weg.weg_skills.model.User;
-import com.weg.weg_skills.repository.EnrollmentRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
