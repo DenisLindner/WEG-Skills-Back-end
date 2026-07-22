@@ -45,7 +45,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ProblemDetail dataIntegrityViolation(DataIntegrityViolationException ex, HttpServletRequest request) {
+    public ProblemDetail dataIntegrityViolation(HttpServletRequest request) {
         return createProblemDetail(HttpStatus.CONFLICT, "Data integrity conflict", "The requested operation conflicts with existing data", "data-integrity-conflict", request.getRequestURI());
     }
 
