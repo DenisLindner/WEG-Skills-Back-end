@@ -15,9 +15,12 @@ import com.weg.weg_skills.repository.EnrollmentRepository;
 import com.weg.weg_skills.repository.ReviewRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -28,7 +31,9 @@ public class ReviewService {
     private CourseRepository courseRepository;
     private UserRepository userRepository;
     private EnrollmentRepository enrollmentRepository;
+    private MediaService mediaService;
 
+    @Transactional
     public ReviewResponseDTO create(ReviewCreateRequestDTO dto, Long userId) {
         Course course = courseRepository.findById(dto.courseId()).orElseThrow(() -> new ResourceNotFoundException("Course", dto.courseId()));
 
@@ -46,19 +51,29 @@ public class ReviewService {
 
         review = reviewRepository.save(review);
 
-        return reviewMapper.toResponse(review);
+        return reviewMapper.toResponse(review, review.getUser().getImage() != null && review.getUser().getImage().isReady() ? mediaService.getPublicUrl(review.getUser().getImage().getId()) : null);
     }
 
-    public List<ReviewResponseDTO> findAllByCourse(Long courseId) {
+    @Transactional(readOnly = true)
+    public Page<ReviewResponseDTO> findAllByCourse(Long courseId, int page, int size) {
         if (!courseRepository.existsById(courseId)) {
             throw new ResourceNotFoundException("Course", courseId);
         }
 
-        List<Review> reviews = reviewRepository.findAllByCourseId(courseId);
+        if (page < 0 || size <= 0 || size > 100) {
+            throw new IllegalArgumentException();
+        }
 
-        return reviews.stream().map(reviewMapper::toResponse).toList();
+        Pageable pageable = PageRequest.of(
+                page, size
+        );
+
+        Page<Review> reviews = reviewRepository.findAllByCourseIdOrderByCreatedAtDesc(courseId, pageable);
+
+        return reviews.map(r -> reviewMapper.toResponse(r, r.getUser().getImage() != null && r.getUser().getImage().isReady() ? mediaService.getPublicUrl(r.getUser().getImage().getId()) : null));
     }
 
+    @Transactional
     public ReviewResponseDTO update(Long id, ReviewUpdateRequestDTO dto, Long userId) {
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User", userId);
@@ -74,9 +89,10 @@ public class ReviewService {
 
         review = reviewRepository.save(review);
 
-        return reviewMapper.toResponse(review);
+        return reviewMapper.toResponse(review, review.getUser().getImage() != null && review.getUser().getImage().isReady() ? mediaService.getPublicUrl(review.getUser().getImage().getId()) : null);
     }
 
+    @Transactional
     public void deleteById(Long id, Long userId) {
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User", userId);
