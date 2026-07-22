@@ -101,4 +101,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> unauthorized(UnauthorizedException ex) {
         return ResponseEntity.status(401).body(ex.getMessage());
     }
+
+    @ExceptionHandler(UserHasCoursesException.class)
+    public ResponseEntity<String> userHasCourses(UserHasCoursesException ex) {
+        return ResponseEntity.status(409).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<String> illegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity.status(400).body(ex.getMessage());
+    }
 }
