@@ -6,14 +6,13 @@ import com.weg.weg_skills.dto.ReviewUpdateRequestDTO;
 import com.weg.weg_skills.service.ReviewService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
-import java.util.List;
 
 @RestController
 @RequestMapping(path = "/reviews")
@@ -30,8 +29,8 @@ public class ReviewController {
 
     @GetMapping(path = "/{courseId}")
     @Operation(summary = "Lists all reviews for a specific course")
-    public ResponseEntity<List<ReviewResponseDTO>> findAllByCourse(@PathVariable Long courseId) {
-        return ResponseEntity.status(200).body(reviewService.findAllByCourse(courseId));
+    public ResponseEntity<Page<ReviewResponseDTO>> findAllByCourse(@PathVariable Long courseId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.status(200).body(reviewService.findAllByCourse(courseId, page, size));
     }
 
     @PatchMapping(path = "/{id}")
