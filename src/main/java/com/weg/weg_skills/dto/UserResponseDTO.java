@@ -8,6 +8,6 @@ public record UserResponseDTO(
         String email,
         LocalDate birthday,
         String phone,
-        String picture_url
+        String pictureUrl
 ) {
 }
