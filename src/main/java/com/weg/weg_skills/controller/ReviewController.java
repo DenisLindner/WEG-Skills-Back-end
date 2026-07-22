@@ -33,6 +33,12 @@ public class ReviewController {
         return ResponseEntity.status(200).body(reviewService.findAllByCourse(courseId, page, size));
     }
 
+    @GetMapping(path = "/me")
+    @Operation(summary = "Lists all reviews for a current user")
+    public ResponseEntity<Page<ReviewResponseDTO>> findAllByUser(@AuthenticationPrincipal Jwt jwt, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.status(200).body(reviewService.findAllByUser(jwt.getClaim("userId"), page, size));
+    }
+
     @PatchMapping(path = "/{id}")
     @Operation(summary = "Partially updates an evaluation")
     public ResponseEntity<ReviewResponseDTO> update(@PathVariable Long id, @RequestBody @Valid ReviewUpdateRequestDTO dto, @AuthenticationPrincipal Jwt jwt) {
