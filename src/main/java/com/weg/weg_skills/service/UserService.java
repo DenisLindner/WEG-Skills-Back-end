@@ -26,32 +26,12 @@ public class UserService {
     private UserMapper userMapper;
     private MediaService mediaService;
     private PasswordEncoder passwordEncoder;
-    private EnrollmentRepository enrollmentRepository;
-    private EnrollmentMapper enrollmentMapper;
 
     @Transactional(readOnly = true)
     public UserResponseDTO getMeProfile(Long id) {
         User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User", id));
 
         return userMapper.toResponse(user, user.getImage() != null && user.getImage().isReady() ? mediaService.getPublicUrl(user.getImage().getId()) : null);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<EnrollmentResponseDTO> getMeEnrollments(Long id, int page, int size) {
-        if (page < 0 || size <= 0 || size > 100) {
-            throw new IllegalArgumentException("Pagination must have page >= 0, size > 0, and size <= 100");
-        }
-
-        User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User", id));
-
-        Pageable pageable = PageRequest.of(
-                page, size,
-                Sort.by("createdAt").descending()
-        );
-
-        Page<Enrollment> enrollments = enrollmentRepository.findAllByUser(user, pageable);
-
-        return enrollments.map(e -> enrollmentMapper.toResponseDTO(e));
     }
 
     @Transactional
