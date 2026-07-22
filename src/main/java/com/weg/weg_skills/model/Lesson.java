@@ -31,13 +31,13 @@ public class Lesson {
 
     @Column(nullable = false, length = 128)
     private String title;
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String description;
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(nullable = false)
+    @JoinColumn(name = "module_id", nullable = false)
     private Module module;
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "video_media_id")
+    @JoinColumn(name = "video_media_id", unique = true)
     private Media video;
 
     @CreationTimestamp
