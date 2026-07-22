@@ -2,7 +2,10 @@ package com.weg.weg_skills.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.Instant;
 
 @Entity
 @Table(
@@ -31,11 +34,19 @@ public class Enrollment {
     private Course course;
 
     @Column(name = "enrolled_at")
-    private LocalDateTime enrolledAt;
+    private Instant enrolledAt;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
 
     public Enrollment(User user, Course course) {
         this.user = user;
         this.course = course;
-        this.enrolledAt = LocalDateTime.now();
+        this.enrolledAt = Instant.now();
     }
 }
