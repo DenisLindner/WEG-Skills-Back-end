@@ -75,6 +75,26 @@ public class ReviewService {
         return reviews.map(r -> reviewMapper.toResponse(r, r.getUser().getImage() != null && r.getUser().getImage().isReady() ? mediaService.getPublicUrl(r.getUser().getImage().getId()) : null));
     }
 
+    @Transactional(readOnly = true)
+    public Page<ReviewResponseDTO> findAllByUser(Long userId, int page, int size) {
+        if (page < 0 || size <= 0 || size > 100) {
+            throw new IllegalArgumentException("Pagination must have page >= 0, size > 0, and size <= 100");
+        }
+
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("User", userId);
+        }
+
+        Pageable pageable = PageRequest.of(
+                page, size,
+                Sort.by("createdAt").descending()
+        );
+
+        Page<Review> reviews = reviewRepository.findAllByCourseId(userId, pageable);
+
+        return reviews.map(r -> reviewMapper.toResponse(r, r.getUser().getImage() != null && r.getUser().getImage().isReady() ? mediaService.getPublicUrl(r.getUser().getImage().getId()) : null));
+    }
+
     @Transactional
     public ReviewResponseDTO update(Long id, ReviewUpdateRequestDTO dto, Long userId) {
         if (!userRepository.existsById(userId)) {
