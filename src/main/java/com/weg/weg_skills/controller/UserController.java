@@ -22,6 +22,12 @@ public class UserController {
         return ResponseEntity.status(200).body(userService.getMeProfile(jwt.getClaim("userId")));
     }
 
+    @PostMapping(path = "/instructor")
+    @Operation(summary = "Create instructor")
+    public ResponseEntity<InstructorResponseDTO> createInstructor(@RequestBody @Valid RegisterInstructorRequestDTO dto, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(201).body(userService.createInstructor(dto, jwt.getClaim("userId")));
+    }
+
     @PostMapping(path = "/me/images/upload")
     @Operation(summary = "Generates a ticket for uploading the user profile image")
     public ResponseEntity<UploadTicketResponseDTO> uploadImage(@RequestBody @Valid CreateMediaUploadRequestDTO dto, @AuthenticationPrincipal Jwt jwt) {

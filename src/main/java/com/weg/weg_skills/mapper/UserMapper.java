@@ -1,5 +1,6 @@
 package com.weg.weg_skills.mapper;
 
+import com.weg.weg_skills.dto.InstructorResponseDTO;
 import com.weg.weg_skills.dto.UserResponseDTO;
 import com.weg.weg_skills.enums.UserRole;
 import com.weg.weg_skills.model.User;
@@ -13,5 +14,9 @@ public class UserMapper {
 
     public UserResponseDTO toResponse(User user, String url) {
         return new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getBirthday(), user.getPhone(), url);
+    }
+
+    public InstructorResponseDTO toResponseInstuctor(User user, String password) {
+        return new InstructorResponseDTO(user.getName(), user.getEmail(), password);
     }
 }

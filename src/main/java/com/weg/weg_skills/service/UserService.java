@@ -1,6 +1,7 @@
 package com.weg.weg_skills.service;
 
 import com.weg.weg_skills.dto.*;
+import com.weg.weg_skills.enums.UserRole;
 import com.weg.weg_skills.exceptions.*;
 import com.weg.weg_skills.mapper.UserMapper;
 import com.weg.weg_skills.model.User;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Locale;
+import java.util.UUID;
 
 @Service
 @AllArgsConstructor
@@ -19,6 +21,28 @@ public class UserService {
     private UserMapper userMapper;
     private MediaService mediaService;
     private PasswordEncoder passwordEncoder;
+
+    @Transactional
+    public InstructorResponseDTO createInstructor(RegisterInstructorRequestDTO dto, Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        if (!user.getRole().equals(UserRole.ADMIN)) {
+            throw new ForbiddenException();
+        }
+
+        String email = normalizeEmail(dto.email());
+
+        if (userRepository.existsByEmailIgnoreCase(email)) {
+            throw new DuplicateResourceException("User", "email", email);
+        }
+
+        String password = generatePassword();
+        User newUser = userMapper.toEntity(dto.name(), email, password, UserRole.INSTRUCTOR);
+
+        userRepository.save(newUser);
+
+        return userMapper.toResponseInstuctor(newUser, password);
+    }
 
     @Transactional(readOnly = true)
     public UserResponseDTO getMeProfile(Long id) {
@@ -123,5 +147,10 @@ public class UserService {
 
     private String normalizeString(String value) {
         return value.trim();
+    }
+
+    private String generatePassword() {
+        String uuid = UUID.randomUUID().toString().replace("-", "");
+        return uuid.substring(0, Math.min(6, uuid.length()));
     }
 }
