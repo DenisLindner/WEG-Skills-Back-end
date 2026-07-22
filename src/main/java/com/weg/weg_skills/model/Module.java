@@ -5,7 +5,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,12 +38,20 @@ public class Module {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false)
     private Course course;
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "image_media_id")
     private Media image;
 
     @OneToMany(mappedBy = "module", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Lesson> lessons = new ArrayList<>();
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
 
     public Module(String title, String description, Course course) {
         this.title = title;
