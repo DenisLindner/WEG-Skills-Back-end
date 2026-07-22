@@ -18,6 +18,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -65,10 +66,11 @@ public class ReviewService {
         }
 
         Pageable pageable = PageRequest.of(
-                page, size
+                page, size,
+                Sort.by("createdAt").descending()
         );
 
-        Page<Review> reviews = reviewRepository.findAllByCourseIdOrderByCreatedAtDesc(courseId, pageable);
+        Page<Review> reviews = reviewRepository.findAllByCourseId(courseId, pageable);
 
         return reviews.map(r -> reviewMapper.toResponse(r, r.getUser().getImage() != null && r.getUser().getImage().isReady() ? mediaService.getPublicUrl(r.getUser().getImage().getId()) : null));
     }
