@@ -77,7 +77,7 @@ public class CourseService {
     @Transactional(readOnly = true)
     public Page<CourseResponseDTO> findAll(int page, int size) {
         if (page < 0 || size <= 0 || size > 100) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Pagination must have page >= 0, size > 0, and size <= 100");
         }
 
         Pageable pageable = PageRequest.of(

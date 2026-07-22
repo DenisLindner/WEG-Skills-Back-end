@@ -80,12 +80,12 @@ public class ModuleService {
 
     @Transactional(readOnly = true)
     public Page<ModuleResponseDTO> findAllByCourse(Long courseId, int page, int size) {
-        if (!courseRepository.existsById(courseId)) {
-            throw new ResourceNotFoundException("Course", courseId);
+        if (page < 0 || size <= 0 || size > 100) {
+            throw new IllegalArgumentException("Pagination must have page >= 0, size > 0, and size <= 100");
         }
 
-        if (page < 0 || size <= 0 || size > 100) {
-            throw new IllegalArgumentException();
+        if (!courseRepository.existsById(courseId)) {
+            throw new ResourceNotFoundException("Course", courseId);
         }
 
         Pageable pageable = PageRequest.of(
