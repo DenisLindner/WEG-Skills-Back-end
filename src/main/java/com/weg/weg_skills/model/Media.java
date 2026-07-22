@@ -7,6 +7,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.Instant;
 
 @Entity
 @Table(name = "medias")
@@ -41,6 +45,14 @@ public class Media {
 
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
 
     public Media(String bucket, String objectKey, String originalFilename, String contentType, long expectedSize, MediaType mediaType, MediaStatus mediaStatus, User user) {
         this.bucket = bucket;
