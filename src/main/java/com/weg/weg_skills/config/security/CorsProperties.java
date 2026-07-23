@@ -6,6 +6,6 @@ import java.util.List;
 
 @ConfigurationProperties(prefix = "cors.config")
 public record CorsProperties(
-        List<String> origin
+        List<String> origins
 ) {
 }
