@@ -20,9 +20,27 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class MediaController {
     private MediaService mediaService;
 
-    @PostMapping(path = "/{mediaId}/complete")
-    @Operation(summary = "Finalizes and confirms the media upload")
-    public ResponseEntity<MediaResponseDTO> completeUpload(@PathVariable Long mediaId, @AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.status(200).body(mediaService.completeUpload(mediaId, jwt.getClaim("userId")));
+    @PostMapping(path = "/{mediaId}/course/{courseId}/complete")
+    @Operation(summary = "Finalizes and confirms the course image upload")
+    public ResponseEntity<MediaResponseDTO> completeCourseImageUpload(@PathVariable Long mediaId, @PathVariable Long courseId, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(200).body(mediaService.completeCourseImageUpload(mediaId, courseId, jwt.getClaim("userId")));
+    }
+
+    @PostMapping(path = "/{mediaId}/module/{moduleId}/complete")
+    @Operation(summary = "Finalizes and confirms the module image upload")
+    public ResponseEntity<MediaResponseDTO> completeModuleImageUpload(@PathVariable Long mediaId, @PathVariable Long moduleId, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(200).body(mediaService.completeModuleImageUpload(mediaId, moduleId, jwt.getClaim("userId")));
+    }
+
+    @PostMapping(path = "/{mediaId}/lesson/{lessonId}/complete")
+    @Operation(summary = "Finalizes and confirms the lesson video upload")
+    public ResponseEntity<MediaResponseDTO> completeLessonVideoUpload(@PathVariable Long mediaId, @PathVariable Long lessonId, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(200).body(mediaService.completeLessonVideoUpload(mediaId, lessonId, jwt.getClaim("userId")));
+    }
+
+    @PostMapping(path = "/{mediaId}/me/complete")
+    @Operation(summary = "Finalizes and confirms the user image upload")
+    public ResponseEntity<MediaResponseDTO> completeUserImageUpload(@PathVariable Long mediaId, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(200).body(mediaService.completeUserImageUpload(mediaId, jwt.getClaim("userId")));
     }
 }
