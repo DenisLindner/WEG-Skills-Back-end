@@ -3,6 +3,7 @@ package com.weg.weg_skills.controller;
 import com.weg.weg_skills.dto.*;
 import com.weg.weg_skills.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping(path = "users")
 @AllArgsConstructor
+@Tag(name = "Users", description = "Endpoints for users management")
 public class UserController {
     private UserService userService;
 
