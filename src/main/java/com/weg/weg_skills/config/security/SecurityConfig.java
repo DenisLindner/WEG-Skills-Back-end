@@ -110,7 +110,7 @@ public class SecurityConfig {
     CorsConfigurationSource corsConfigurationSource(CorsProperties properties) {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
 
-        corsConfiguration.setAllowedOrigins(properties.origin());
+        corsConfiguration.setAllowedOrigins(properties.origins());
 
         corsConfiguration.setAllowedMethods(List.of(
                 HttpMethod.GET.name(),
