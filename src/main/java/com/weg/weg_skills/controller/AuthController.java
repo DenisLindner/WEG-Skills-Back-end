@@ -4,6 +4,7 @@ import com.weg.weg_skills.dto.AuthResponseDTO;
 import com.weg.weg_skills.dto.LoginRequestDTO;
 import com.weg.weg_skills.dto.RegisterRequestDTO;
 import com.weg.weg_skills.service.AuthService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping(path = "auth")
 @AllArgsConstructor
+@Tag(name = "Auth", description = "Endpoints for auth management")
 public class AuthController {
     private AuthService authService;
 
