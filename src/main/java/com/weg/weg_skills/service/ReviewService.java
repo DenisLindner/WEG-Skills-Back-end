@@ -90,7 +90,7 @@ public class ReviewService {
                 Sort.by("createdAt").descending()
         );
 
-        Page<Review> reviews = reviewRepository.findAllByCourseId(userId, pageable);
+        Page<Review> reviews = reviewRepository.findAllByUserId(userId, pageable);
 
         return reviews.map(r -> reviewMapper.toResponse(r, r.getUser().getImage() != null && r.getUser().getImage().isReady() ? mediaService.getPublicUrl(r.getUser().getImage().getId()) : null));
     }
