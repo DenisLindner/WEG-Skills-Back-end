@@ -7,6 +7,7 @@ import com.weg.weg_skills.exceptions.ForbiddenException;
 import com.weg.weg_skills.exceptions.ResourceNotFoundException;
 import com.weg.weg_skills.mapper.LessonMapper;
 import com.weg.weg_skills.model.Lesson;
+import com.weg.weg_skills.model.Media;
 import com.weg.weg_skills.model.Module;
 import com.weg.weg_skills.repository.EnrollmentRepository;
 import com.weg.weg_skills.repository.LessonRepository;
@@ -72,11 +73,14 @@ public class LessonService {
 
         CreatedMediaUpload createdMedia = mediaService.createLessonVideoUpload(lesson.getModule().getCourse().getId(), lesson.getModule().getId(), lesson.getId(), userId, dto);
 
-        if (lesson.getVideo() != null) {
-            mediaService.delete(lesson.getVideo().getId());
+        Media previousVideo = lesson.getPendingVideo();
+
+        lesson.setPendingVideo(createdMedia.media());
+        lessonRepository.saveAndFlush(lesson);
+
+        if (previousVideo != null) {
+            mediaService.delete(previousVideo.getId());
         }
-        lesson.setVideo(createdMedia.media());
-        lessonRepository.save(lesson);
 
         return createdMedia.ticket();
     }
@@ -162,6 +166,10 @@ public class LessonService {
 
         if (lesson.getVideo() != null) {
             mediaService.delete(lesson.getVideo().getId());
+        }
+
+        if (lesson.getPendingVideo() != null) {
+            mediaService.delete(lesson.getPendingVideo().getId());
         }
 
         lessonRepository.delete(lesson);
