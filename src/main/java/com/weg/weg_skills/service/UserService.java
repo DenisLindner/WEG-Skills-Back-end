@@ -26,7 +26,7 @@ public class UserService {
     public InstructorResponseDTO createInstructor(RegisterInstructorRequestDTO dto, Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
-        if (!user.getRole().equals(UserRole.ADMIN)) {
+        if (user.getRole() != UserRole.ADMIN) {
             throw new ForbiddenException();
         }
 
@@ -37,11 +37,11 @@ public class UserService {
         }
 
         String password = generatePassword();
-        User newUser = userMapper.toEntity(dto.name(), email, password, UserRole.INSTRUCTOR);
+        User newUser = userMapper.toEntity(dto.name(), email, passwordEncoder.encode(password), UserRole.INSTRUCTOR);
 
         userRepository.save(newUser);
 
-        return userMapper.toResponseInstuctor(newUser, password);
+        return userMapper.toResponseInstructor(newUser, password);
     }
 
     @Transactional(readOnly = true)
@@ -151,6 +151,6 @@ public class UserService {
 
     private String generatePassword() {
         String uuid = UUID.randomUUID().toString().replace("-", "");
-        return uuid.substring(0, Math.min(6, uuid.length()));
+        return uuid.substring(0, Math.min(8, uuid.length()));
     }
 }
