@@ -43,6 +43,9 @@ public class Media {
     @Column(name = "media_status", nullable = false)
     private MediaStatus mediaStatus;
 
+    @Version
+    private int version;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -82,5 +85,9 @@ public class Media {
 
     public boolean isReady() {
         return mediaStatus == MediaStatus.READY;
+    }
+
+    public boolean isDeleted() {
+        return mediaStatus == MediaStatus.DELETED;
     }
 }

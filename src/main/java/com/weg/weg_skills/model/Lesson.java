@@ -36,9 +36,15 @@ public class Lesson {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "module_id", nullable = false)
     private Module module;
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "video_media_id", unique = true)
     private Media video;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pending_video_media_id", unique = true)
+    private Media pendingVideo;
+
+    @Version
+    private int version;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

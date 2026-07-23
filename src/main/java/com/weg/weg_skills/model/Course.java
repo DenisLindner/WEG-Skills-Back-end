@@ -27,9 +27,16 @@ public class Course {
     private String title;
     @Column(columnDefinition = "TEXT")
     private String description;
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "image_media_id", unique = true)
     private Media image;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pending_image_media_id", unique = true)
+    private Media pendingImage;
+
+    @Version
+    private int version;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "instructor_id", nullable = false)
     private User instructor;
