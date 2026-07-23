@@ -16,7 +16,7 @@ public class UserMapper {
         return new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getBirthday(), user.getPhone(), url);
     }
 
-    public InstructorResponseDTO toResponseInstuctor(User user, String password) {
+    public InstructorResponseDTO toResponseInstructor(User user, String password) {
         return new InstructorResponseDTO(user.getName(), user.getEmail(), password);
     }
 }
