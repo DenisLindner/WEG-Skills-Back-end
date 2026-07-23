@@ -73,6 +73,11 @@ public class SecurityConfig {
 
                         .requestMatchers(
                                 HttpMethod.POST,
+                                "/users/instructor"
+                        ).hasRole("ADMIN")
+
+                        .requestMatchers(
+                                HttpMethod.POST,
                                 "/courses/**",
                                 "/modules/**",
                                 "/lessons/**"
