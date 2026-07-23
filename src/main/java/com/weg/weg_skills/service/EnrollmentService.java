@@ -12,6 +12,10 @@ import com.weg.weg_skills.repository.CourseRepository;
 import com.weg.weg_skills.repository.EnrollmentRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,5 +42,23 @@ public class EnrollmentService {
         enrollment = enrollmentRepository.save(enrollment);
 
         return enrollmentMapper.toResponseDTO(enrollment);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<EnrollmentResponseDTO> getMeEnrollments(Long id, int page, int size) {
+        if (page < 0 || size <= 0 || size > 100) {
+            throw new IllegalArgumentException("Pagination must have page >= 0, size > 0, and size <= 100");
+        }
+
+        User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User", id));
+
+        Pageable pageable = PageRequest.of(
+                page, size,
+                Sort.by("createdAt").descending()
+        );
+
+        Page<Enrollment> enrollments = enrollmentRepository.findAllByUser(user, pageable);
+
+        return enrollments.map(enrollmentMapper::toResponseDTO);
     }
 }

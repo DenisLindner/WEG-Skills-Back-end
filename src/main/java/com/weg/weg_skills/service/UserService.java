@@ -1,23 +1,18 @@
 package com.weg.weg_skills.service;
 
 import com.weg.weg_skills.dto.*;
+import com.weg.weg_skills.enums.UserRole;
 import com.weg.weg_skills.exceptions.*;
-import com.weg.weg_skills.mapper.EnrollmentMapper;
 import com.weg.weg_skills.mapper.UserMapper;
-import com.weg.weg_skills.model.Enrollment;
 import com.weg.weg_skills.model.User;
-import com.weg.weg_skills.repository.EnrollmentRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Locale;
+import java.util.UUID;
 
 @Service
 @AllArgsConstructor
@@ -26,32 +21,34 @@ public class UserService {
     private UserMapper userMapper;
     private MediaService mediaService;
     private PasswordEncoder passwordEncoder;
-    private EnrollmentRepository enrollmentRepository;
-    private EnrollmentMapper enrollmentMapper;
+
+    @Transactional
+    public InstructorResponseDTO createInstructor(RegisterInstructorRequestDTO dto, Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        if (user.getRole() != UserRole.ADMIN) {
+            throw new ForbiddenException();
+        }
+
+        String email = normalizeEmail(dto.email());
+
+        if (userRepository.existsByEmailIgnoreCase(email)) {
+            throw new DuplicateResourceException("User", "email", email);
+        }
+
+        String password = generatePassword();
+        User newUser = userMapper.toEntity(dto.name(), email, passwordEncoder.encode(password), UserRole.INSTRUCTOR);
+
+        userRepository.save(newUser);
+
+        return userMapper.toResponseInstructor(newUser, password);
+    }
 
     @Transactional(readOnly = true)
     public UserResponseDTO getMeProfile(Long id) {
         User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User", id));
 
         return userMapper.toResponse(user, user.getImage() != null && user.getImage().isReady() ? mediaService.getPublicUrl(user.getImage().getId()) : null);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<EnrollmentResponseDTO> getMeEnrollments(Long id, int page, int size) {
-        if (page < 0 || size <= 0 || size > 100) {
-            throw new IllegalArgumentException("Pagination must have page >= 0, size > 0, and size <= 100");
-        }
-
-        User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User", id));
-
-        Pageable pageable = PageRequest.of(
-                page, size,
-                Sort.by("createdAt").descending()
-        );
-
-        Page<Enrollment> enrollments = enrollmentRepository.findAllByUser(user, pageable);
-
-        return enrollments.map(e -> enrollmentMapper.toResponseDTO(e));
     }
 
     @Transactional
@@ -150,5 +147,10 @@ public class UserService {
 
     private String normalizeString(String value) {
         return value.trim();
+    }
+
+    private String generatePassword() {
+        String uuid = UUID.randomUUID().toString().replace("-", "");
+        return uuid.substring(0, Math.min(8, uuid.length()));
     }
 }

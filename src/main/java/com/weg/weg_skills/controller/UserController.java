@@ -5,7 +5,6 @@ import com.weg.weg_skills.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -23,10 +22,10 @@ public class UserController {
         return ResponseEntity.status(200).body(userService.getMeProfile(jwt.getClaim("userId")));
     }
 
-    @GetMapping(path = "/me/enrollments")
-    @Operation(summary = "Find all enrollments by current user")
-    public ResponseEntity<Page<EnrollmentResponseDTO>> getMeEnrollments(@AuthenticationPrincipal Jwt jwt, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.status(200).body(userService.getMeEnrollments(jwt.getClaim("userId"), page, size));
+    @PostMapping(path = "/instructor")
+    @Operation(summary = "Create instructor")
+    public ResponseEntity<InstructorResponseDTO> createInstructor(@RequestBody @Valid RegisterInstructorRequestDTO dto, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(201).body(userService.createInstructor(dto, jwt.getClaim("userId")));
     }
 
     @PostMapping(path = "/me/images/upload")
