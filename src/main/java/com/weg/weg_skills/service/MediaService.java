@@ -10,16 +10,19 @@ import com.weg.weg_skills.enums.MediaStatus;
 import com.weg.weg_skills.enums.MediaType;
 import com.weg.weg_skills.exceptions.*;
 import com.weg.weg_skills.mapper.MediaMapper;
-import com.weg.weg_skills.model.Media;
-import com.weg.weg_skills.model.User;
-import com.weg.weg_skills.repository.MediaRepository;
-import com.weg.weg_skills.repository.UserRepository;
+import com.weg.weg_skills.model.*;
+import com.weg.weg_skills.model.Module;
+import com.weg.weg_skills.repository.*;
 import io.minio.StatObjectResponse;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -49,6 +52,9 @@ public class MediaService {
     private MinioService minioService;
     private MinioProperties minioProperties;
     private MediaMapper mediaMapper;
+    private CourseRepository courseRepository;
+    private ModuleRepository moduleRepository;
+    private LessonRepository lessonRepository;
 
     @Transactional
     public CreatedMediaUpload createCourseImageUpload(
@@ -199,54 +205,229 @@ public class MediaService {
         );
     }
 
+
     @Transactional(noRollbackFor = MediaMetadataMismatchException.class)
-    public MediaResponseDTO completeUpload(Long mediaId, Long userId) {
-        Media media = findById(mediaId);
+    public MediaResponseDTO completeCourseImageUpload(Long mediaId, Long courseId, Long userId) {
+        Course course = courseRepository.findById(courseId).orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
 
-        if (!media.getUser().getId().equals(userId)) {
-            throw new ForbiddenException();
+        if (course.getImage() != null && course.getImage().getId().equals(mediaId) && course.getImage().isReady() && course.getImage().getUser().getId().equals(userId)) {
+            return mediaMapper.toResponse(course.getImage());
         }
 
-        if (media.isReady()) {
-            return mediaMapper.toResponse(media);
-        }
+        Media media = course.getPendingImage();
+
+        validateMedia(media, mediaId);
+
+        validateMediaOwner(media, userId);
 
         if (!media.isPendingUpload()) {
             throw new InvalidMediaStateException(media.getMediaStatus());
         }
 
-        StatObjectResponse metadata =
-                minioService.getObjectMetadata(media.getBucket(), media.getObjectKey());
+        StatObjectResponse metadata = getMetadata(media);
 
-        boolean invalidSize = metadata.size() != media.getExpectedSize();
+        boolean invalidSize = validateMediaSize(metadata, media);
 
-        boolean invalidType = !Objects.equals(
-                metadata.contentType(),
-                media.getContentType()
-        );
+        boolean invalidType = validateMediaType(metadata, media);
 
         if (invalidType || invalidSize) {
-            media.markAsFailed(metadata.size());
-
-            try {
-                minioService.deleteObject(
-                        media.getBucket(),
-                        media.getObjectKey()
-                );
-            } catch (RuntimeException exception) {
-                log.warn(
-                        "Could not delete invalid media object: {}",
-                        media.getObjectKey(),
-                        exception
-                );
-            }
-
-            throw new MediaMetadataMismatchException();
+            course.setPendingImage(null);
+            deleteMediaInvalid(media, metadata);
         }
 
-        media.markAsReady(metadata.size());
+        setReady(media, metadata);
+
+        Media previousImage = course.getImage();
+
+        course.setImage(media);
+        course.setPendingImage(null);
+        courseRepository.saveAndFlush(course);
+
+        if (previousImage != null) {
+            delete(previousImage.getId());
+        }
 
         return mediaMapper.toResponse(media);
+    }
+
+    @Transactional(noRollbackFor = MediaMetadataMismatchException.class)
+    public MediaResponseDTO completeModuleImageUpload(Long mediaId, Long moduleId, Long userId) {
+        Module module = moduleRepository.findById(moduleId).orElseThrow(() -> new ResourceNotFoundException("Module", moduleId));
+
+        if (module.getImage() != null && module.getImage().getId().equals(mediaId) && module.getImage().isReady() && module.getImage().getUser().getId().equals(userId)) {
+            return mediaMapper.toResponse(module.getImage());
+        }
+
+        Media media = module.getPendingImage();
+
+        validateMedia(media, mediaId);
+
+        validateMediaOwner(media, userId);
+
+        if (!media.isPendingUpload()) {
+            throw new InvalidMediaStateException(media.getMediaStatus());
+        }
+
+        StatObjectResponse metadata = getMetadata(media);
+
+        boolean invalidSize = validateMediaSize(metadata, media);
+
+        boolean invalidType = validateMediaType(metadata, media);
+
+        if (invalidType || invalidSize) {
+            module.setPendingImage(null);
+            deleteMediaInvalid(media, metadata);
+        }
+
+        setReady(media, metadata);
+
+        Media previousImage = module.getImage();
+
+        module.setImage(media);
+        module.setPendingImage(null);
+        moduleRepository.saveAndFlush(module);
+
+        if (previousImage != null) {
+            delete(previousImage.getId());
+        }
+
+        return mediaMapper.toResponse(media);
+    }
+
+    @Transactional(noRollbackFor = MediaMetadataMismatchException.class)
+    public MediaResponseDTO completeLessonVideoUpload(Long mediaId, Long lessonId, Long userId) {
+        Lesson lesson = lessonRepository.findById(lessonId).orElseThrow(() -> new ResourceNotFoundException("Lesson", lessonId));
+
+        if (lesson.getVideo() != null && lesson.getVideo().getId().equals(mediaId) && lesson.getVideo().isReady() && lesson.getVideo().getUser().getId().equals(userId)) {
+            return mediaMapper.toResponse(lesson.getVideo());
+        }
+
+        Media media = lesson.getPendingVideo();
+
+        validateMedia(media, mediaId);
+
+        validateMediaOwner(media, userId);
+
+        if (!media.isPendingUpload()) {
+            throw new InvalidMediaStateException(media.getMediaStatus());
+        }
+
+        StatObjectResponse metadata = getMetadata(media);
+
+        boolean invalidSize = validateMediaSize(metadata, media);
+
+        boolean invalidType = validateMediaType(metadata, media);
+
+        if (invalidType || invalidSize) {
+            lesson.setPendingVideo(null);
+            deleteMediaInvalid(media, metadata);
+        }
+
+        setReady(media, metadata);
+
+        Media previousVideo = lesson.getVideo();
+
+        lesson.setVideo(media);
+        lesson.setPendingVideo(null);
+        lessonRepository.saveAndFlush(lesson);
+
+        if (previousVideo != null) {
+            delete(previousVideo.getId());
+        }
+
+        return mediaMapper.toResponse(media);
+    }
+
+
+    @Transactional(noRollbackFor = MediaMetadataMismatchException.class)
+    public MediaResponseDTO completeUserImageUpload(Long mediaId, Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        if (user.getImage() != null && user.getImage().getId().equals(mediaId) && user.getImage().isReady()) {
+            return mediaMapper.toResponse(user.getImage());
+        }
+
+        Media media = user.getPendingImage();
+
+        validateMedia(media, mediaId);
+
+        validateMediaOwner(media, userId);
+
+        if (!media.isPendingUpload()) {
+            throw new InvalidMediaStateException(media.getMediaStatus());
+        }
+
+        StatObjectResponse metadata = getMetadata(media);
+
+        boolean invalidSize = validateMediaSize(metadata, media);
+
+        boolean invalidType = validateMediaType(metadata, media);
+
+        if (invalidType || invalidSize) {
+            user.setPendingImage(null);
+            deleteMediaInvalid(media, metadata);
+        }
+
+        setReady(media, metadata);
+
+        Media previousImage = user.getImage();
+
+        user.setImage(media);
+        user.setPendingImage(null);
+        userRepository.saveAndFlush(user);
+
+        if (previousImage != null) {
+            delete(previousImage.getId());
+        }
+
+        return mediaMapper.toResponse(media);
+    }
+
+    private void validateMedia(Media media, Long mediaId) {
+        if (media == null || !media.getId().equals(mediaId)) {
+            throw new InvalidMediaOperationException();
+        }
+    }
+
+    private void validateMediaOwner(Media media, Long userId) {
+        if (!media.getUser().getId().equals(userId)) {
+            throw new ForbiddenException();
+        }
+    }
+
+    private boolean validateMediaSize(StatObjectResponse metadata, Media media) {
+        return metadata.size() != media.getExpectedSize();
+    }
+
+    private boolean validateMediaType(StatObjectResponse metadata, Media media) {
+        return !Objects.equals(metadata.contentType(), media.getContentType());
+    }
+
+    private StatObjectResponse getMetadata(Media media) {
+        return minioService.getObjectMetadata(media.getBucket(), media.getObjectKey());
+    }
+
+    private void setReady(Media media, StatObjectResponse metadata) {
+        media.markAsReady(metadata.size());
+    }
+
+    private void deleteMediaInvalid(Media media, StatObjectResponse metadata) {
+        media.markAsFailed(metadata.size());
+
+        try {
+            minioService.deleteObject(
+                    media.getBucket(),
+                    media.getObjectKey()
+            );
+        } catch (RuntimeException exception) {
+            log.warn(
+                    "Could not delete invalid media object: {}",
+                    media.getObjectKey(),
+                    exception
+            );
+        }
+
+        throw new MediaMetadataMismatchException();
     }
 
     @Transactional(readOnly = true)
@@ -287,9 +468,22 @@ public class MediaService {
                     media.getObjectKey()
             );
 
-            media.setMediaStatus(MediaStatus.DELETED);
+            mediaRepository.delete(media);
         }
     }
+
+    @Scheduled(fixedDelayString = "PT15M")
+    @Transactional
+    public void expirePendingUploads() {
+        Instant limit = Instant.now().minus(Duration.ofHours(1));
+
+        List<Media> expired = mediaRepository.findByCreatedAtBeforeAndMediaStatus(limit, MediaStatus.PENDING_UPLOAD);
+
+        for (Media media : expired) {
+            delete(media.getId());
+        }
+    }
+
 
     private Media findReadMediaById(Long mediaId) {
         Media media = findById(mediaId);
