@@ -4,6 +4,7 @@ import com.weg.weg_skills.dto.*;
 import com.weg.weg_skills.enums.UserRole;
 import com.weg.weg_skills.exceptions.*;
 import com.weg.weg_skills.mapper.UserMapper;
+import com.weg.weg_skills.model.Media;
 import com.weg.weg_skills.model.User;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
@@ -57,11 +58,14 @@ public class UserService {
 
         CreatedMediaUpload createdMedia = mediaService.createUserImageUpload(id, dto);
 
-        if (user.getImage() != null) {
-            mediaService.delete(user.getImage().getId());
+        Media previousImage = user.getPendingImage();
+
+        user.setPendingImage(createdMedia.media());
+        userRepository.saveAndFlush(user);
+
+        if (previousImage != null) {
+            mediaService.delete(previousImage.getId());
         }
-        user.setImage(createdMedia.media());
-        userRepository.save(user);
 
         return createdMedia.ticket();
     }
@@ -136,6 +140,10 @@ public class UserService {
 
         if (user.getImage() != null) {
             mediaService.delete(user.getImage().getId());
+        }
+
+        if (user.getPendingImage() != null) {
+            mediaService.delete(user.getPendingImage().getId());
         }
 
         userRepository.deleteById(id);
