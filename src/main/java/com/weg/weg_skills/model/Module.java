@@ -38,9 +38,15 @@ public class Module {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "image_media_id", unique = true)
     private Media image;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pending_image_media_id", unique = true)
+    private Media pendingImage;
+
+    @Version
+    private int version;
 
     @OneToMany(mappedBy = "module", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Lesson> lessons = new ArrayList<>();

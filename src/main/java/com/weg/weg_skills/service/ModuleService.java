@@ -7,6 +7,7 @@ import com.weg.weg_skills.exceptions.ForbiddenException;
 import com.weg.weg_skills.exceptions.ResourceNotFoundException;
 import com.weg.weg_skills.mapper.ModuleMapper;
 import com.weg.weg_skills.model.Course;
+import com.weg.weg_skills.model.Media;
 import com.weg.weg_skills.model.Module;
 import com.weg.weg_skills.repository.CourseRepository;
 import com.weg.weg_skills.repository.ModuleRepository;
@@ -69,11 +70,14 @@ public class ModuleService {
 
         CreatedMediaUpload createdMedia = mediaService.createModuleImageUpload(module.getCourse().getId(), module.getId(), userId, dto);
 
-        if (module.getImage() != null) {
-            mediaService.delete(module.getImage().getId());
+        Media previousImage = module.getPendingImage();
+
+        module.setPendingImage(createdMedia.media());
+        moduleRepository.saveAndFlush(module);
+
+        if (previousImage != null) {
+            mediaService.delete(previousImage.getId());
         }
-        module.setImage(createdMedia.media());
-        moduleRepository.save(module);
 
         return createdMedia.ticket();
     }
@@ -148,6 +152,15 @@ public class ModuleService {
         if (module.getImage() != null) {
             mediaService.delete(module.getImage().getId());
         }
+
+        if (module.getPendingImage() != null) {
+            mediaService.delete(module.getPendingImage().getId());
+        }
+
+        module.getLessons().forEach(l -> {
+            if (l.getVideo() != null && !l.getVideo().isDeleted()) mediaService.delete(l.getVideo().getId());
+            if (l.getPendingVideo() != null && !l.getPendingVideo().isDeleted()) mediaService.delete(l.getPendingVideo().getId());
+        });
 
         moduleRepository.delete(module);
     }

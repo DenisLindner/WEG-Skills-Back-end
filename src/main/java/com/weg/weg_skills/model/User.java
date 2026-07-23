@@ -49,9 +49,15 @@ public class User implements UserDetails {
     private String state;
     @Column(length = 128)
     private String country;
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "image_media_id", unique = true)
     private Media image;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pending_image_media_id", unique = true)
+    private Media pendingImage;
+
+    @Version
+    private int version;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Review> reviews = new ArrayList<>();
