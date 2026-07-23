@@ -1,11 +1,13 @@
 package com.weg.weg_skills.exceptions;
 
+import jakarta.persistence.OptimisticLockException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -39,7 +41,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({DuplicateResourceException.class, UserHasCoursesException.class, EnrollmentAlreadyExistsException.class, ReviewAlreadyExistsException.class,
-                        InvalidMediaStateException.class, MediaNotReadyException.class, InvalidMediaOperationException.class})
+                        InvalidMediaStateException.class, MediaNotReadyException.class, InvalidMediaOperationException.class, ObjectOptimisticLockingFailureException.class,
+                        OptimisticLockException.class})
     public ProblemDetail conflict(RuntimeException ex, HttpServletRequest request) {
         return createProblemDetail(HttpStatus.CONFLICT, "Conflict", ex.getMessage(), "conflict", request.getRequestURI());
     }
