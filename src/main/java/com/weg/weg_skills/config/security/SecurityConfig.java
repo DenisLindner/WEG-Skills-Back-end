@@ -78,7 +78,9 @@ public class SecurityConfig {
                                 HttpMethod.GET,
                                 "/docs/**",
                                 "/swagger-ui/**",
-                                "/v3/api-docs/**"
+                                "/v3/api-docs/**",
+                                "/actuator/health/**",
+                                "/actuator/info"
                         ).permitAll()
 
                         .requestMatchers("/admin/**")
