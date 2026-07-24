@@ -33,6 +33,7 @@ class GlobalExceptionHandlerTest {
         assertThat(handler.conflict(new DuplicateResourceException("Course", "title", "Java"), request).getStatus()).isEqualTo(409);
         assertThat(handler.unprocessableContent(new InvalidUploadException(
                 com.weg.weg_skills.enums.InvalidUpload.FILE_TOO_LARGE), request).getStatus()).isEqualTo(422);
+        assertThat(handler.tooManyRequests(request).getStatus()).isEqualTo(429);
         assertThat(handler.serviceUnavailable(new StorageServiceException("storage unavailable", new RuntimeException()), request).getStatus()).isEqualTo(503);
     }
 
