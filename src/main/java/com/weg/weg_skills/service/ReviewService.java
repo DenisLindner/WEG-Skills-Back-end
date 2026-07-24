@@ -15,6 +15,7 @@ import com.weg.weg_skills.repository.EnrollmentRepository;
 import com.weg.weg_skills.repository.ReviewRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class ReviewService {
@@ -51,6 +53,8 @@ public class ReviewService {
         Review review = reviewMapper.toEntity(dto, course, user);
 
         review = reviewRepository.save(review);
+
+        log.atInfo().addKeyValue("courseId", course.getId()).addKeyValue("userId", userId).log("Review created");
 
         return reviewMapper.toResponse(review, review.getUser().getImage() != null && review.getUser().getImage().isReady() ? mediaService.getPublicUrl(review.getUser().getImage().getId()) : null);
     }
@@ -111,6 +115,8 @@ public class ReviewService {
 
         review = reviewRepository.save(review);
 
+        log.atInfo().addKeyValue("reviewId", id).addKeyValue("userId", userId).log("Review updated");
+
         return reviewMapper.toResponse(review, review.getUser().getImage() != null && review.getUser().getImage().isReady() ? mediaService.getPublicUrl(review.getUser().getImage().getId()) : null);
     }
 
@@ -127,5 +133,7 @@ public class ReviewService {
         }
 
         reviewRepository.deleteById(id);
+
+        log.atInfo().addKeyValue("reviewId", id).addKeyValue("userId", userId).log("Review deleted");
     }
 }
