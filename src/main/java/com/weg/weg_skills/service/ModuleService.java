@@ -13,6 +13,7 @@ import com.weg.weg_skills.repository.CourseRepository;
 import com.weg.weg_skills.repository.ModuleRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class ModuleService {
@@ -51,6 +53,8 @@ public class ModuleService {
 
         module = moduleRepository.save(module);
 
+        log.atInfo().addKeyValue("title", title).addKeyValue("courseId", module.getCourse().getId()).addKeyValue("userId", userId).log("Module created");
+
         return moduleMapper.toResponse(module, null);
     }
 
@@ -78,6 +82,8 @@ public class ModuleService {
         if (previousImage != null) {
             mediaService.delete(previousImage.getId());
         }
+
+        log.atInfo().addKeyValue("moduleId", id).addKeyValue("userId", userId).log("Upload module image ticket created");
 
         return createdMedia.ticket();
     }
@@ -135,6 +141,8 @@ public class ModuleService {
 
         module = moduleRepository.save(module);
 
+        log.atInfo().addKeyValue("moduleId", id).addKeyValue("userId", userId).log("Module updated");
+
         return moduleMapper.toResponse(module, module.getImage() != null && module.getImage().isReady() ? mediaService.getPublicUrl(module.getImage().getId()) : null);
     }
 
@@ -163,6 +171,8 @@ public class ModuleService {
         });
 
         moduleRepository.delete(module);
+
+        log.atInfo().addKeyValue("moduleId", id).addKeyValue("userId", userId).log("Module deleted");
     }
 
     private String normalizeString(String value) {
