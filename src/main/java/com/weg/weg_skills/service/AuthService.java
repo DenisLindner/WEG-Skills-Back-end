@@ -12,6 +12,7 @@ import com.weg.weg_skills.mapper.UserMapper;
 import com.weg.weg_skills.model.User;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Locale;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class AuthService {
@@ -50,6 +52,8 @@ public class AuthService {
                         user.getId(),
                         user.getAuthorities()
                 );
+
+        log.atInfo().addKeyValue("email", email).addKeyValue("role", UserRole.STUDENT).log("User registered");
 
         return authMapper.toResponse(generatedToken.value(), "Bearer", generatedToken.expiresAt());
     }
