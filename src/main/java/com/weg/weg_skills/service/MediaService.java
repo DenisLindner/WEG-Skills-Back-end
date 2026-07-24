@@ -470,6 +470,8 @@ public class MediaService {
 
             mediaRepository.delete(media);
         }
+
+        log.atInfo().addKeyValue("mediaId", mediaId).addKeyValue("userId", media.getUser().getId()).log("Media deleted");
     }
 
     @Scheduled(fixedDelayString = "PT15M")
