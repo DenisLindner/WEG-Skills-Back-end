@@ -20,9 +20,14 @@ import java.time.Instant;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler({IllegalArgumentException.class, MethodArgumentNotValidException.class, HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
+    @ExceptionHandler({IllegalArgumentException.class, HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
     public ProblemDetail badRequest(RuntimeException ex, HttpServletRequest request) {
         return createProblemDetail(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage(), "bad-request", request.getRequestURI());
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ProblemDetail methodArgument(MethodArgumentNotValidException ex, HttpServletRequest request) {
+        return createProblemDetail(HttpStatus.BAD_REQUEST, "Bad Request", "Method argument not valid", "bad-request", request.getRequestURI());
     }
 
     @ExceptionHandler({InvalidCredentialsException.class, UnauthorizedException.class})
@@ -38,6 +43,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({ResourceNotFoundException.class, UsernameNotFoundException.class})
     public ProblemDetail resourceNotFound(RuntimeException ex, HttpServletRequest request) {
         return createProblemDetail(HttpStatus.NOT_FOUND, "Resource not found", ex.getMessage(), "resource-not-found", request.getRequestURI());
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ProblemDetail illegalState(IllegalStateException ex, HttpServletRequest request) {
+        return createProblemDetail(HttpStatus.CONFLICT, "Conflict", "Illegal state exception", "illegal-state", request.getRequestURI());
     }
 
     @ExceptionHandler({DuplicateResourceException.class, UserHasCoursesException.class, EnrollmentAlreadyExistsException.class, ReviewAlreadyExistsException.class,
