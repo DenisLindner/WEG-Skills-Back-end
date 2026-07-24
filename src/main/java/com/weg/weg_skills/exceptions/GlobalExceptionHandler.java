@@ -26,7 +26,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ProblemDetail methodArgument(MethodArgumentNotValidException ex, HttpServletRequest request) {
+    public ProblemDetail methodArgument(HttpServletRequest request) {
         return createProblemDetail(HttpStatus.BAD_REQUEST, "Bad Request", "Method argument not valid", "bad-request", request.getRequestURI());
     }
 
@@ -46,7 +46,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(IllegalStateException.class)
-    public ProblemDetail illegalState(IllegalStateException ex, HttpServletRequest request) {
+    public ProblemDetail illegalState(HttpServletRequest request) {
         return createProblemDetail(HttpStatus.CONFLICT, "Conflict", "Illegal state exception", "illegal-state", request.getRequestURI());
     }
 
