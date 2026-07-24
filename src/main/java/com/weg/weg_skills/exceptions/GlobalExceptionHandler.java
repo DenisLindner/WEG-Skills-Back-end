@@ -67,6 +67,11 @@ public class GlobalExceptionHandler {
         return createProblemDetail(HttpStatus.UNPROCESSABLE_CONTENT, "Unprocessable Content", ex.getMessage(), "unprocessable-content", request.getRequestURI());
     }
 
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ProblemDetail tooManyRequests(HttpServletRequest request) {
+        return createProblemDetail(HttpStatus.TOO_MANY_REQUESTS, "Too many requests", "Request limit exceeded", "too-many-requests", request.getRequestURI());
+    }
+
     @ExceptionHandler(StorageServiceException.class)
     public ProblemDetail serviceUnavailable(RuntimeException ex, HttpServletRequest request) {
         return createProblemDetail(HttpStatus.SERVICE_UNAVAILABLE, "Service Unavailable", ex.getMessage(), "service-unavailable", request.getRequestURI());
