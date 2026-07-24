@@ -93,8 +93,7 @@ public class SecurityConfig {
                                 HttpMethod.POST,
                                 "/courses/**",
                                 "/modules/**",
-                                "/lessons/**",
-                                "/medias/**"
+                                "/lessons/**"
                         ).hasAnyRole("ADMIN", "INSTRUCTOR")
 
                         .requestMatchers(
