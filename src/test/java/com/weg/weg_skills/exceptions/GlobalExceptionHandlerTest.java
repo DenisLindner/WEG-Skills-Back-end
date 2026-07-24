@@ -5,6 +5,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletRequest;
 
+import java.util.Objects;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class GlobalExceptionHandlerTest {
@@ -19,8 +21,8 @@ class GlobalExceptionHandlerTest {
         assertThat(problem.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
         assertThat(problem.getTitle()).isEqualTo("Bad Request");
         assertThat(problem.getDetail()).isEqualTo("invalid page");
-        assertThat(problem.getType().toString()).isEqualTo("urn:problem:bad-request");
-        assertThat(problem.getInstance().toString()).isEqualTo("/courses/99");
+        assertThat(Objects.requireNonNull(problem.getType()).toString()).isEqualTo("urn:problem:bad-request");
+        assertThat(Objects.requireNonNull(problem.getInstance()).toString()).isEqualTo("/courses/99");
         assertThat(problem.getProperties()).containsKey("timestamp");
     }
 
