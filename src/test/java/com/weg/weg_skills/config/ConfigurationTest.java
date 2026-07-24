@@ -15,7 +15,7 @@ class ConfigurationTest {
         var openApi = new SwaggerConfig().customOpenAPI();
 
         assertThat(openApi.getInfo().getTitle()).isEqualTo("WEG Skills");
-        assertThat(openApi.getInfo().getVersion()).isEqualTo("0.0.1");
+        assertThat(openApi.getInfo().getVersion()).isEqualTo("1.0.0");
         assertThat(openApi.getInfo().getDescription()).contains("WEG Skills");
     }
 
