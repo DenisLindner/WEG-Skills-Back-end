@@ -147,7 +147,10 @@ public class SecurityConfig {
         ));
 
         corsConfiguration.setExposedHeaders(List.of(
-                "Location"
+                "Location",
+                "Retry-After",
+                "X-RateLimit-Limit",
+                "X-RateLimit-Remaining"
         ));
 
         corsConfiguration.setAllowCredentials(false);
