@@ -1,5 +1,8 @@
 package com.weg.weg_skills.config.security;
 
+import com.weg.weg_skills.exceptions.ForbiddenException;
+import com.weg.weg_skills.exceptions.UnauthorizedException;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,10 +22,13 @@ import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -39,7 +45,9 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(
             HttpSecurity httpSecurity,
             JwtAuthenticationConverter jwtAuthenticationConverter,
-            CorsConfigurationSource corsConfigurationSource
+            CorsConfigurationSource corsConfigurationSource,
+            AuthenticationEntryPoint authenticationEntryPoint,
+            AccessDeniedHandler accessDeniedHandler
     ) {
 
         return httpSecurity
@@ -52,6 +60,11 @@ public class SecurityConfig {
                         session.sessionCreationPolicy (
                                 SessionCreationPolicy.STATELESS
                         )
+                )
+
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler)
                 )
 
                 .authorizeHttpRequests(authorize -> authorize
@@ -80,7 +93,8 @@ public class SecurityConfig {
                                 HttpMethod.POST,
                                 "/courses/**",
                                 "/modules/**",
-                                "/lessons/**"
+                                "/lessons/**",
+                                "/medias/**"
                         ).hasAnyRole("ADMIN", "INSTRUCTOR")
 
                         .requestMatchers(
@@ -239,5 +253,33 @@ public class SecurityConfig {
         );
 
         return authenticationConverter;
+    }
+
+    @Bean
+    AuthenticationEntryPoint authenticationEntryPoint(
+            @Qualifier("handlerExceptionResolver")
+            HandlerExceptionResolver exceptionResolver
+    ) {
+        return (request, response, authenticationException) ->
+                exceptionResolver.resolveException(
+                        request,
+                        response,
+                        null,
+                        new UnauthorizedException()
+                );
+    }
+
+    @Bean
+    AccessDeniedHandler accessDeniedHandler(
+            @Qualifier("handlerExceptionResolver")
+            HandlerExceptionResolver exceptionResolver
+    ) {
+        return (request, response, accessDeniedException) ->
+                exceptionResolver.resolveException(
+                        request,
+                        response,
+                        null,
+                        new ForbiddenException()
+                );
     }
 }
