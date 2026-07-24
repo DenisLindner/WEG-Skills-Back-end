@@ -8,6 +8,7 @@ import com.weg.weg_skills.model.Media;
 import com.weg.weg_skills.model.User;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Locale;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class UserService {
@@ -42,6 +44,8 @@ public class UserService {
 
         userRepository.save(newUser);
 
+        log.atInfo().addKeyValue("email", email).addKeyValue("role", UserRole.INSTRUCTOR).addKeyValue("userId", userId).log("Instructor created");
+
         return userMapper.toResponseInstructor(newUser, password);
     }
 
@@ -66,6 +70,8 @@ public class UserService {
         if (previousImage != null) {
             mediaService.delete(previousImage.getId());
         }
+
+        log.atInfo().addKeyValue("userId", id).log("Upload user image ticket created");
 
         return createdMedia.ticket();
     }
@@ -114,6 +120,8 @@ public class UserService {
 
         user = userRepository.save(user);
 
+        log.atInfo().addKeyValue("userId", id).log("User updated");
+
         return userMapper.toResponse(user, user.getImage() != null && user.getImage().isReady() ? mediaService.getPublicUrl(user.getImage().getId()) : null);
     }
 
@@ -128,6 +136,8 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(dto.password()));
 
         userRepository.save(user);
+
+        log.atInfo().addKeyValue("userId", id).log("User changed password");
     }
 
     @Transactional
@@ -147,6 +157,8 @@ public class UserService {
         }
 
         userRepository.deleteById(id);
+
+        log.atInfo().addKeyValue("userId", id).log("User deleted");
     }
 
     private String normalizeEmail(String email) {
