@@ -14,6 +14,7 @@ import com.weg.weg_skills.repository.LessonRepository;
 import com.weg.weg_skills.repository.ModuleRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class LessonService {
@@ -54,6 +56,9 @@ public class LessonService {
 
         lesson = lessonRepository.save(lesson);
 
+        log.atInfo().addKeyValue("title", title).addKeyValue("moduleId", lesson.getModule().getId())
+                .addKeyValue("courseId", lesson.getModule().getCourse().getId()).addKeyValue("userId", userId).log("Lesson created");
+
         return lessonMapper.toResponse(lesson);
     }
 
@@ -81,6 +86,8 @@ public class LessonService {
         if (previousVideo != null) {
             mediaService.delete(previousVideo.getId());
         }
+
+        log.atInfo().addKeyValue("lessonId", id).addKeyValue("userId", userId).log("Upload lesson video ticket created");
 
         return createdMedia.ticket();
     }
@@ -150,6 +157,8 @@ public class LessonService {
 
         lesson = lessonRepository.save(lesson);
 
+        log.atInfo().addKeyValue("lesson", id).addKeyValue("userId", userId).log("Lesson updated");
+
         return lessonMapper.toResponse(lesson);
     }
 
@@ -173,6 +182,8 @@ public class LessonService {
         }
 
         lessonRepository.delete(lesson);
+
+        log.atInfo().addKeyValue("lessonId", id).addKeyValue("userId", userId).log("Lesson deleted");
     }
 
     private String normalizeString(String value) {

@@ -12,6 +12,7 @@ import com.weg.weg_skills.repository.CourseRepository;
 import com.weg.weg_skills.repository.EnrollmentRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +20,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class EnrollmentService {
@@ -40,6 +42,8 @@ public class EnrollmentService {
 
         Enrollment enrollment = enrollmentMapper.toEntity(user, course);
         enrollment = enrollmentRepository.save(enrollment);
+
+        log.atInfo().addKeyValue("courseId", course.getId()).addKeyValue("userId", userId).log("Enrollment created");
 
         return enrollmentMapper.toResponseDTO(enrollment);
     }

@@ -5,6 +5,7 @@ import com.weg.weg_skills.dto.MinioUploadTicketDTO;
 import com.weg.weg_skills.exceptions.StorageServiceException;
 import io.minio.*;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.ZoneOffset;
@@ -13,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class MinioService {
@@ -49,6 +51,7 @@ public class MinioService {
                     expiresAt.toInstant()
             );
         } catch (Exception e) {
+            log.atError().addKeyValue("bucket", bucket).addKeyValue("objectKey", objectKey).log("Failed to create upload ticket");
             throw new StorageServiceException("Failed to generate upload ticket", e);
         }
     }
@@ -65,6 +68,7 @@ public class MinioService {
                             .build()
             );
         } catch (Exception e) {
+            log.atError().addKeyValue("bucket", bucket).addKeyValue("objectKey", objectKey).log("Failed to get object metadata");
             throw new StorageServiceException("Failed to get object metadata", e);
         }
     }
@@ -88,6 +92,7 @@ public class MinioService {
                             .build()
             );
         } catch (Exception e) {
+            log.atError().addKeyValue("bucket", bucket).addKeyValue("objectKey", objectKey).log("Failed to create private url");
             throw new StorageServiceException("Failed to create private url", e);
         }
     }
@@ -115,6 +120,7 @@ public class MinioService {
                             .build()
             );
         } catch (Exception e) {
+            log.atError().addKeyValue("bucket", bucket).addKeyValue("objectKey", objectKey).log("Failed to delete object");
             throw new StorageServiceException("Failed to delete object", e);
         }
     }

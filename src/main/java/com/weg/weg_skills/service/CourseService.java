@@ -12,6 +12,7 @@ import com.weg.weg_skills.model.User;
 import com.weg.weg_skills.repository.CourseRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class CourseService {
@@ -46,6 +48,8 @@ public class CourseService {
         Course course = courseMapper.toEntity(title, description, user);
 
         course = courseRepository.save(course);
+
+        log.atInfo().addKeyValue("title", title).addKeyValue("userId", userId).log("Course created");
 
         return courseMapper.toResponse(course, null);
     }
@@ -74,6 +78,8 @@ public class CourseService {
         if (previousImage != null) {
             mediaService.delete(previousImage.getId());
         }
+
+        log.atInfo().addKeyValue("courseId", id).addKeyValue("userId", userId).log("Upload course image ticket created");
 
         return createdMedia.ticket();
     }
@@ -128,6 +134,8 @@ public class CourseService {
 
         course = courseRepository.save(course);
 
+        log.atInfo().addKeyValue("courseId", id).addKeyValue("userId", userId).log("Course updated");
+
         return courseMapper.toResponse(course, course.getImage() != null && course.getImage().isReady() ? mediaService.getPublicUrl(course.getImage().getId()) : null);
     }
 
@@ -159,6 +167,8 @@ public class CourseService {
         });
 
         courseRepository.delete(course);
+
+        log.atInfo().addKeyValue("courseId", id).addKeyValue("userId", userId).log("Course deleted");
     }
 
     private String normalizeString(String value) {
