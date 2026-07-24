@@ -33,6 +33,7 @@ import org.springframework.data.domain.Pageable;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -121,7 +122,7 @@ class CourseServiceTest {
                 assertThat(item.imageUrl()).isEqualTo("image-url"));
         ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
         verify(courseRepository).findAll(captor.capture());
-        assertThat(captor.getValue().getSort().getOrderFor("createdAt").isDescending()).isTrue();
+        assertThat(Objects.requireNonNull(captor.getValue().getSort().getOrderFor("createdAt")).isDescending()).isTrue();
     }
 
     @Test
