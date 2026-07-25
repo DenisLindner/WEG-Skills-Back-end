@@ -18,5 +18,5 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
             ORDER BY COUNT(e) DESC
         """)
     List<Course> findMostEnrollmentsCourses(Pageable pageable);
-    Page<Course> findAllByTitleIgnoreCaseOrderByCreatedAtDesc(String title, Pageable pageable);
+    Page<Course> findAllByTitleIgnoreCase(String title, Pageable pageable);
 }
