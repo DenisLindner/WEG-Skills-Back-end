@@ -94,6 +94,8 @@ class ControllerTest {
         assertThat(controller.create(create, jwt).getStatusCode().value()).isEqualTo(201);
         assertThat(controller.uploadImage(2L, upload, jwt).getStatusCode().value()).isEqualTo(201);
         assertThat(controller.findAll(0, 10).getStatusCode().value()).isEqualTo(200);
+        assertThat(controller.findAllByTitle("Java", 0, 10).getStatusCode().value()).isEqualTo(200);
+        assertThat(controller.findMostEnrollments().getStatusCode().value()).isEqualTo(200);
         assertThat(controller.findById(2L).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.update(2L, update, jwt).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.deleteById(2L, jwt).getStatusCode().value()).isEqualTo(204);
@@ -101,6 +103,8 @@ class ControllerTest {
         verify(courseService).create(create, 1L);
         verify(courseService).uploadImage(2L, upload, 1L, List.of("INSTRUCTOR"));
         verify(courseService).findAll(0, 10);
+        verify(courseService).findAllByTitle("Java", 0, 10);
+        verify(courseService).findMostEnrollments();
         verify(courseService).findById(2L);
         verify(courseService).update(2L, update, 1L, List.of("INSTRUCTOR"));
         verify(courseService).deleteById(2L, 1L, List.of("INSTRUCTOR"));
