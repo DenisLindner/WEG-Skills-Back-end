@@ -9,6 +9,7 @@ import com.weg.weg_skills.mapper.CourseMapper;
 import com.weg.weg_skills.model.Course;
 import com.weg.weg_skills.model.Media;
 import com.weg.weg_skills.model.User;
+import com.weg.weg_skills.projection.CourseWithRatingProjection;
 import com.weg.weg_skills.repository.CourseRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
@@ -100,6 +101,42 @@ public class CourseService {
         return courses.map(c ->
             courseMapper.toResponse(c, c.getImage() != null && c.getImage().isReady() ? mediaService.getPublicUrl(c.getImage().getId()) : null)
         );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<CourseResponseDTO> findAllByTitle(String title, int page, int size) {
+        if (title == null || title.trim().length() < 3) {
+            throw new IllegalArgumentException("Title must have a non-null value and be equal to or longer than 3 characters");
+        }
+
+        if (page < 0 || size <= 0 || size > 100) {
+            throw new IllegalArgumentException("Pagination must have page >= 0, size > 0, and size <= 100");
+        }
+
+        Pageable pageable = PageRequest.of(
+                page, size,
+                Sort.by("createdAt").descending()
+        );
+
+        Page<Course> courses = courseRepository.findAllByTitleContainingIgnoreCase(title.trim(), pageable);
+
+        return courses.map(c ->
+            courseMapper.toResponse(c, c.getImage() != null && c.getImage().isReady() ? mediaService.getPublicUrl(c.getImage().getId()) : null)
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public List<CourseWithRatingResponseDTO> findMostEnrollments() {
+        Pageable pageable = PageRequest.of(
+                0, 3,
+                Sort.by("createdAt").descending()
+        );
+
+        List<CourseWithRatingProjection> courses = courseRepository.findMostEnrollmentsCourses(pageable);
+
+        return courses.stream().map(c ->
+            courseMapper.toResponseProjection(c, c.getImage() != null && c.getImage().isReady() ? mediaService.getPublicUrl(c.getImage().getId()) : null)
+        ).toList();
     }
 
     @Transactional(readOnly = true)

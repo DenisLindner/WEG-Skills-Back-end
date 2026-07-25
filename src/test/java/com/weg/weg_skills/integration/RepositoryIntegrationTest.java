@@ -63,6 +63,8 @@ class RepositoryIntegrationTest {
         assertThat(userRepository.existsByEmailIgnoreCase("INSTRUCTOR@EXAMPLE.COM")).isTrue();
         assertThat(userRepository.findByEmailIgnoreCase("STUDENT@EXAMPLE.COM")).contains(student);
         assertThat(courseRepository.existsByTitleIgnoreCase("java")).isTrue();
+        assertThat(courseRepository.findAllByTitleContainingIgnoreCase("jav", PageRequest.of(0, 10)))
+                .contains(course);
         assertThat(moduleRepository.existsByCourseAndTitleIgnoreCase(course, "BASICS")).isTrue();
         assertThat(lessonRepository.existsByModuleAndTitleIgnoreCase(module, "INTRODUCTION")).isTrue();
         assertThat(enrollmentRepository.existsByUserAndCourse(student, course)).isTrue();
@@ -76,5 +78,12 @@ class RepositoryIntegrationTest {
         assertThat(reviewRepository.findAllByUserId(student.getId(), PageRequest.of(0, 10))).contains(review);
         assertThat(mediaRepository.findByCreatedAtBeforeAndMediaStatus(
                 Instant.now().plusSeconds(1), MediaStatus.PENDING_UPLOAD)).contains(media);
+        assertThat(courseRepository.findMostEnrollmentsCourses(PageRequest.of(0, 3)))
+                .singleElement()
+                .satisfies(item -> {
+                    assertThat(item.getTitle()).isEqualTo("Java");
+                    assertThat(item.getRating()).isEqualTo(9.0);
+                    assertThat(item.getImage()).isNull();
+                });
     }
 }

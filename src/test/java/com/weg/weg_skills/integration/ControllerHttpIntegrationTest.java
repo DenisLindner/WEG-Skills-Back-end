@@ -7,6 +7,7 @@ import com.weg.weg_skills.controller.ModuleController;
 import com.weg.weg_skills.controller.ReviewController;
 import com.weg.weg_skills.dto.AuthResponseDTO;
 import com.weg.weg_skills.dto.CourseResponseDTO;
+import com.weg.weg_skills.dto.CourseWithRatingResponseDTO;
 import com.weg.weg_skills.dto.LessonResponseDTO;
 import com.weg.weg_skills.dto.ModuleResponseDTO;
 import com.weg.weg_skills.dto.ReviewResponseDTO;
@@ -104,6 +105,10 @@ class ControllerHttpIntegrationTest {
     void shouldListCatalogResourcesThroughHttp() throws Exception {
         when(courseService.findAll(0, 10)).thenReturn(new PageImpl<>(
                 List.of(new CourseResponseDTO(1L, "Course", "Description", null)), PageRequest.of(0, 10), 1));
+        when(courseService.findAllByTitle("Course", 0, 10)).thenReturn(new PageImpl<>(
+                List.of(new CourseResponseDTO(1L, "Course", "Description", null)), PageRequest.of(0, 10), 1));
+        when(courseService.findMostEnrollments()).thenReturn(List.of(
+                new CourseWithRatingResponseDTO(1L, "Course", "Description", 9.0, null)));
         when(moduleService.findAllByCourse(1L, 0, 10)).thenReturn(new PageImpl<>(
                 List.of(new ModuleResponseDTO(2L, "Module", "Description", null)), PageRequest.of(0, 10), 1));
         when(lessonService.findAllByModule(2L, 0, 10)).thenReturn(new PageImpl<>(
@@ -114,6 +119,12 @@ class ControllerHttpIntegrationTest {
         mockMvc.perform(get("/courses"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].title").value("Course"));
+        mockMvc.perform(get("/courses/title").param("title", "Course"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].title").value("Course"));
+        mockMvc.perform(get("/courses/top-courses"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].rating").value(9.0));
         mockMvc.perform(get("/modules/course/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].title").value("Module"));
