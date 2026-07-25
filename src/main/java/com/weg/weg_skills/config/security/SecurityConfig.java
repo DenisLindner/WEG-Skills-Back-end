@@ -77,6 +77,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/docs/**",
+                                "/courses/top-courses",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/actuator/health/**",
