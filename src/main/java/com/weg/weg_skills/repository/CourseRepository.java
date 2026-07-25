@@ -1,6 +1,7 @@
 package com.weg.weg_skills.repository;
 
 import com.weg.weg_skills.model.Course;
+import com.weg.weg_skills.projection.CourseWithRatingProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,12 +12,17 @@ import java.util.List;
 public interface CourseRepository extends JpaRepository<Course, Long> {
     Boolean existsByTitleIgnoreCase(String title);
     @Query("""
-            SELECT c
+            SELECT c.id AS id, c.title AS title, c.description AS description, COALESCE(AVG(r.rate), 0.0) AS rating, c.image AS image
             FROM Course c
-            LEFT JOIN Enrollment e
-            GROUP BY c
-            ORDER BY COUNT(e) DESC
+            LEFT JOIN c.enrollments e
+            LEFT JOIN c.reviews r
+            GROUP BY
+                    c.id,
+                    c.title,
+                    c.description,
+                    c.image
+            ORDER BY COUNT(DISTINCT e.id) DESC
         """)
-    List<Course> findMostEnrollmentsCourses(Pageable pageable);
+    List<CourseWithRatingProjection> findMostEnrollmentsCourses(Pageable pageable);
     Page<Course> findAllByTitleIgnoreCase(String title, Pageable pageable);
 }
