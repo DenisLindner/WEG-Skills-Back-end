@@ -118,7 +118,7 @@ public class CourseService {
                 Sort.by("createdAt").descending()
         );
 
-        Page<Course> courses = courseRepository.findAllByTitleIgnoreCase(title, pageable);
+        Page<Course> courses = courseRepository.findAllByTitleContainingIgnoreCase(title.trim(), pageable);
 
         return courses.map(c ->
             courseMapper.toResponse(c, c.getImage() != null && c.getImage().isReady() ? mediaService.getPublicUrl(c.getImage().getId()) : null)
