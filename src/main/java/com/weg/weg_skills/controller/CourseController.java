@@ -41,7 +41,7 @@ public class CourseController {
 
     @GetMapping(path = "/title")
     @Operation(summary = "Lists all courses counting title")
-    public ResponseEntity<Page<CourseResponseDTO>> findAllByTitle(@RequestAttribute String title, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+    public ResponseEntity<Page<CourseResponseDTO>> findAllByTitle(@RequestParam String title, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.status(200).body(courseService.findAllByTitle(title, page, size));
     }
 
