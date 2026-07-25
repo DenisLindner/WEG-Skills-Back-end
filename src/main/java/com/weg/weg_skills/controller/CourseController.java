@@ -37,6 +37,12 @@ public class CourseController {
         return ResponseEntity.status(200).body(courseService.findAll(page, size));
     }
 
+    @GetMapping
+    @Operation(summary = "Lists all courses counting title")
+    public ResponseEntity<Page<CourseResponseDTO>> findAllByTitle(@RequestParam String title, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.status(200).body(courseService.findAllByTitle(title, page, size));
+    }
+
     @GetMapping(path = "/{id}")
     @Operation(summary = "Search for a course by ID")
     public ResponseEntity<CourseResponseDTO> findById(@PathVariable Long id) {
