@@ -17,6 +17,7 @@ import com.weg.weg_skills.model.Lesson;
 import com.weg.weg_skills.model.Media;
 import com.weg.weg_skills.model.Module;
 import com.weg.weg_skills.model.User;
+import com.weg.weg_skills.projection.CourseWithRatingProjection;
 import com.weg.weg_skills.repository.CourseRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,6 +50,7 @@ class CourseServiceTest {
     @Mock CourseRepository courseRepository;
     @Mock MediaService mediaService;
     @Mock UserRepository userRepository;
+    @Mock CourseWithRatingProjection courseProjection;
 
     private CourseService service;
 
@@ -123,6 +125,39 @@ class CourseServiceTest {
         ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
         verify(courseRepository).findAll(captor.capture());
         assertThat(Objects.requireNonNull(captor.getValue().getSort().getOrderFor("createdAt")).isDescending()).isTrue();
+    }
+
+    @Test
+    void shouldFindCoursesContainingNormalizedTitle() {
+        Course course = TestData.course(2L, TestData.user(1L, UserRole.INSTRUCTOR));
+        when(courseRepository.findAllByTitleContainingIgnoreCase(any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(course)));
+
+        var response = service.findAllByTitle(" Java ", 0, 10);
+
+        assertThat(response.getContent()).singleElement().satisfies(item ->
+                assertThat(item.title()).isEqualTo("Java Basics"));
+        verify(courseRepository).findAllByTitleContainingIgnoreCase("Java", any(Pageable.class));
+    }
+
+    @Test
+    void shouldListTopThreeCoursesWithRating() {
+        when(courseProjection.getId()).thenReturn(2L);
+        when(courseProjection.getTitle()).thenReturn("Java Basics");
+        when(courseProjection.getDescription()).thenReturn("Course description");
+        when(courseProjection.getRating()).thenReturn(9.0);
+        when(courseRepository.findMostEnrollmentsCourses(any(Pageable.class)))
+                .thenReturn(List.of(courseProjection));
+
+        var response = service.findMostEnrollments();
+
+        assertThat(response).singleElement().satisfies(item -> {
+            assertThat(item.id()).isEqualTo(2L);
+            assertThat(item.rating()).isEqualTo(9.0);
+        });
+        ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+        verify(courseRepository).findMostEnrollmentsCourses(captor.capture());
+        assertThat(captor.getValue().getPageSize()).isEqualTo(3);
     }
 
     @Test
