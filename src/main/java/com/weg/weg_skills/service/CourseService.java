@@ -9,6 +9,7 @@ import com.weg.weg_skills.mapper.CourseMapper;
 import com.weg.weg_skills.model.Course;
 import com.weg.weg_skills.model.Media;
 import com.weg.weg_skills.model.User;
+import com.weg.weg_skills.projection.CourseWithRatingProjection;
 import com.weg.weg_skills.repository.CourseRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
@@ -122,6 +123,20 @@ public class CourseService {
         return courses.map(c ->
             courseMapper.toResponse(c, c.getImage() != null && c.getImage().isReady() ? mediaService.getPublicUrl(c.getImage().getId()) : null)
         );
+    }
+
+    @Transactional(readOnly = true)
+    public List<CourseWithRatingResponseDTO> findMostEnrollments() {
+        Pageable pageable = PageRequest.of(
+                0, 3,
+                Sort.by("createdAt").descending()
+        );
+
+        List<CourseWithRatingProjection> courses = courseRepository.findMostEnrollmentsCourses(pageable);
+
+        return courses.stream().map(c ->
+            courseMapper.toResponseProjection(c, c.getImage() != null && c.getImage().isReady() ? mediaService.getPublicUrl(c.getImage().getId()) : null)
+        ).toList();
     }
 
     @Transactional(readOnly = true)
