@@ -12,17 +12,18 @@ import java.util.List;
 public interface CourseRepository extends JpaRepository<Course, Long> {
     Boolean existsByTitleIgnoreCase(String title);
     @Query("""
-            SELECT c.id AS id, c.title AS title, c.description AS description, COALESCE(AVG(r.rate), 0.0) AS rating, c.image AS image
+            SELECT c.id AS id, c.title AS title, c.description AS description, COALESCE(AVG(r.rate), 0.0) AS rating, i AS image
             FROM Course c
             LEFT JOIN c.enrollments e
             LEFT JOIN c.reviews r
+            LEFT JOIN c.image i
             GROUP BY
                     c.id,
                     c.title,
                     c.description,
-                    c.image
+                    i
             ORDER BY COUNT(DISTINCT e.id) DESC
         """)
     List<CourseWithRatingProjection> findMostEnrollmentsCourses(Pageable pageable);
-    Page<Course> findAllByTitleIgnoreCase(String title, Pageable pageable);
+    Page<Course> findAllByTitleContainingIgnoreCase(String title, Pageable pageable);
 }
