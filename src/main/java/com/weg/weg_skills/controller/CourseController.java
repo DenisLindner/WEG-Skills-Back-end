@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import java.util.List;
+
 @RestController
 @RequestMapping(path = "/courses")
 @AllArgsConstructor
@@ -37,10 +39,16 @@ public class CourseController {
         return ResponseEntity.status(200).body(courseService.findAll(page, size));
     }
 
-    @GetMapping
+    @GetMapping(path = "/title")
     @Operation(summary = "Lists all courses counting title")
-    public ResponseEntity<Page<CourseResponseDTO>> findAllByTitle(@RequestParam String title, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+    public ResponseEntity<Page<CourseResponseDTO>> findAllByTitle(@RequestAttribute String title, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.status(200).body(courseService.findAllByTitle(title, page, size));
+    }
+
+    @GetMapping(path = "/top-courses")
+    @Operation(summary = "Lists top courses with most enrollments")
+    public ResponseEntity<List<CourseWithRatingResponseDTO>> findMostEnrollments() {
+        return ResponseEntity.status(200).body(courseService.findMostEnrollments());
     }
 
     @GetMapping(path = "/{id}")
