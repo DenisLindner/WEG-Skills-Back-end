@@ -103,6 +103,28 @@ public class CourseService {
     }
 
     @Transactional(readOnly = true)
+    public Page<CourseResponseDTO> findAllByTitle(String title, int page, int size) {
+        if (title == null || title.trim().length() < 3) {
+            throw new IllegalArgumentException("Title must have a non-null value and be equal to or longer than 3 characters");
+        }
+
+        if (page < 0 || size <= 0 || size > 100) {
+            throw new IllegalArgumentException("Pagination must have page >= 0, size > 0, and size <= 100");
+        }
+
+        Pageable pageable = PageRequest.of(
+                page, size,
+                Sort.by("createdAt").descending()
+        );
+
+        Page<Course> courses = courseRepository.findAllByTitleIgnoreCase(title, pageable);
+
+        return courses.map(c ->
+            courseMapper.toResponse(c, c.getImage() != null && c.getImage().isReady() ? mediaService.getPublicUrl(c.getImage().getId()) : null)
+        );
+    }
+
+    @Transactional(readOnly = true)
     public CourseResponseDTO findById(Long id) {
         Course course = courseRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Course", id));
 
