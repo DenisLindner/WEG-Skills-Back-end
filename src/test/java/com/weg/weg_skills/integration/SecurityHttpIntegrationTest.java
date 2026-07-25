@@ -21,6 +21,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -63,6 +64,14 @@ class SecurityHttpIntegrationTest {
     void shouldRequireAuthenticationForProtectedEndpoint() throws Exception {
         mockMvc.perform(get("/courses"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldAllowPublicTopCoursesEndpoint() throws Exception {
+        when(courseService.findMostEnrollments()).thenReturn(List.of());
+
+        mockMvc.perform(get("/courses/top-courses"))
+                .andExpect(status().isOk());
     }
 
     @Test
