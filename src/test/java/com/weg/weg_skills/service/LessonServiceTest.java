@@ -4,6 +4,7 @@ import com.weg.weg_skills.TestData;
 import com.weg.weg_skills.dto.CreateMediaUploadRequestDTO;
 import com.weg.weg_skills.dto.LessonCreateRequestDTO;
 import com.weg.weg_skills.dto.LessonUpdateRequestDTO;
+import com.weg.weg_skills.dto.RepositionRequestDTO;
 import com.weg.weg_skills.dto.UploadTicketResponseDTO;
 import com.weg.weg_skills.enums.MediaStatus;
 import com.weg.weg_skills.enums.MediaType;
@@ -59,7 +60,9 @@ class LessonServiceTest {
     @Test
     void shouldCreateLessonForCourseOwner() {
         Module module = module();
+        Lesson previousLesson = TestData.lesson(10L, module);
         when(moduleRepository.findById(3L)).thenReturn(Optional.of(module));
+        when(lessonRepository.findTopByModuleOrderByPositionDesc(module)).thenReturn(previousLesson);
         when(lessonRepository.save(any(Lesson.class))).thenAnswer(invocation -> {
             Lesson lesson = invocation.getArgument(0);
             lesson.setId(4L);
@@ -71,6 +74,7 @@ class LessonServiceTest {
 
         assertThat(response.id()).isEqualTo(4L);
         assertThat(response.title()).isEqualTo("Lesson");
+        assertThat(response.position()).isEqualTo(2L);
     }
 
     @Test
@@ -167,6 +171,38 @@ class LessonServiceTest {
                 .isInstanceOf(ResourceNotFoundException.class);
 
         assertThatThrownBy(() -> service.findAllByModule(3L, -1, 10))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void shouldRepositionLessons() {
+        Module module = module();
+        Lesson first = TestData.lesson(4L, module);
+        Lesson second = TestData.lesson(5L, module);
+        second.setPosition(2L);
+        List<Lesson> lessons = List.of(first, second);
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(moduleRepository.existsById(3L)).thenReturn(true);
+        when(lessonRepository.findAllByModuleId(3L)).thenReturn(lessons);
+
+        service.reposition(new RepositionRequestDTO(3L, List.of(5L, 4L)),
+                1L, List.of("INSTRUCTOR"));
+
+        assertThat(second.getPosition()).isEqualTo(1L);
+        assertThat(first.getPosition()).isEqualTo(2L);
+        verify(lessonRepository).saveAllAndFlush(lessons);
+    }
+
+    @Test
+    void shouldRejectInvalidLessonOrder() {
+        Module module = module();
+        List<Lesson> lessons = List.of(TestData.lesson(4L, module), TestData.lesson(5L, module));
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(moduleRepository.existsById(3L)).thenReturn(true);
+        when(lessonRepository.findAllByModuleId(3L)).thenReturn(lessons);
+
+        assertThatThrownBy(() -> service.reposition(
+                new RepositionRequestDTO(3L, List.of(4L, 4L)), 1L, List.of("INSTRUCTOR")))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
