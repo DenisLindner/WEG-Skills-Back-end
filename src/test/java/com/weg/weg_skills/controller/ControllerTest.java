@@ -12,6 +12,7 @@ import com.weg.weg_skills.dto.ModuleUpdateRequestDTO;
 import com.weg.weg_skills.dto.PasswordChangeRequestDTO;
 import com.weg.weg_skills.dto.RegisterInstructorRequestDTO;
 import com.weg.weg_skills.dto.RegisterRequestDTO;
+import com.weg.weg_skills.dto.RepositionRequestDTO;
 import com.weg.weg_skills.dto.ReviewCreateRequestDTO;
 import com.weg.weg_skills.dto.ReviewUpdateRequestDTO;
 import com.weg.weg_skills.dto.UserUpdateRequestDTO;
@@ -117,6 +118,7 @@ class ControllerTest {
         var create = new ModuleCreateRequestDTO("Module", "Description", 2L);
         var upload = new CreateMediaUploadRequestDTO("image.png", "image/png", 100L);
         var update = new ModuleUpdateRequestDTO("Updated", null);
+        var reposition = new RepositionRequestDTO(2L, List.of(4L, 3L));
 
         assertThat(controller.create(create, jwt).getStatusCode().value()).isEqualTo(201);
         assertThat(controller.uploadImage(3L, upload, jwt).getStatusCode().value()).isEqualTo(201);
@@ -124,6 +126,9 @@ class ControllerTest {
         assertThat(controller.findById(3L).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.update(3L, update, jwt).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.deleteById(3L, jwt).getStatusCode().value()).isEqualTo(204);
+        assertThat(controller.reposition(reposition, jwt).getStatusCode().value()).isEqualTo(204);
+
+        verify(moduleService).reposition(reposition, 1L, List.of("INSTRUCTOR"));
     }
 
     @Test
@@ -133,6 +138,7 @@ class ControllerTest {
         var create = new LessonCreateRequestDTO("Lesson", "Description", 3L);
         var upload = new CreateMediaUploadRequestDTO("video.mp4", "video/mp4", 100L);
         var update = new LessonUpdateRequestDTO("Updated", null);
+        var reposition = new RepositionRequestDTO(3L, List.of(5L, 4L));
 
         assertThat(controller.create(create, jwt).getStatusCode().value()).isEqualTo(201);
         assertThat(controller.uploadVideo(4L, upload, jwt).getStatusCode().value()).isEqualTo(201);
@@ -140,6 +146,9 @@ class ControllerTest {
         assertThat(controller.findById(4L, jwt).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.update(4L, update, jwt).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.deleteById(4L, jwt).getStatusCode().value()).isEqualTo(204);
+        assertThat(controller.reposition(reposition, jwt).getStatusCode().value()).isEqualTo(204);
+
+        verify(lessonService).reposition(reposition, 1L, List.of("INSTRUCTOR"));
     }
 
     @Test
