@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -48,8 +49,18 @@ public class ModuleService {
             throw new DuplicateResourceException("Module", "title", title);
         }
 
+        Module lastModule = moduleRepository.findTopByCourseOrderByPositionDesc(course);
+
+        long position = lastModule != null ? lastModule.getPosition() + 1 : 1;
+
+        if (position > 100) {
+            if (moduleRepository.countByCourseId(course.getId()) >= 100) {
+                throw new IllegalArgumentException("Module limit per courses reached");
+            }
+        }
+
         String description = dto.description() != null ? normalizeString(dto.description()) : null;
-        Module module = moduleMapper.toEntity(title, description, course);
+        Module module = moduleMapper.toEntity(title, description, course, position);
 
         module = moduleRepository.save(module);
 
@@ -100,7 +111,7 @@ public class ModuleService {
 
         Pageable pageable = PageRequest.of(
                 page, size,
-                Sort.by("createdAt").descending()
+                Sort.by("position").ascending()
         );
 
         Page<Module> modules = moduleRepository.findAllByCourseId(courseId, pageable);
@@ -173,6 +184,52 @@ public class ModuleService {
         moduleRepository.delete(module);
 
         log.atInfo().addKeyValue("moduleId", id).addKeyValue("userId", userId).log("Module deleted");
+    }
+
+    @Transactional
+    public void reposition(RepositionRequestDTO dto, Long userId, List<String> roles) {
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("User", userId);
+        }
+        if (!courseRepository.existsById(dto.parentId())) {
+            throw new ResourceNotFoundException("Course", dto.parentId());
+        }
+
+        List<Module> modules = moduleRepository.findAllByCourseId(dto.parentId());
+
+        if (dto.orderedIds().isEmpty()) {
+            throw new IllegalArgumentException("Ordered ids list is empty");
+        }
+
+        if (modules.isEmpty()) {
+            throw new IllegalArgumentException("Modules list is empty");
+        }
+
+        for (Module module : modules) {
+            if (!dto.orderedIds().contains(module.getId())) {
+                throw new IllegalArgumentException("The size of the module list is different from the size of the ordered ID list");
+            }
+        }
+
+        if (modules.size() != dto.orderedIds().size()) {
+            throw new IllegalArgumentException("The size of the module list is different from the size of the ordered ID list");
+        }
+
+        if (!Objects.equals(modules.getFirst().getCourse().getInstructor().getId(), userId)) {
+            if (!roles.contains(String.valueOf(UserRole.ADMIN))) {
+                throw new ForbiddenException();
+            }
+        }
+
+        Long position = 1L;
+        for (Long id : dto.orderedIds()) {
+            Module module = modules.stream().filter(m -> m.getId().equals(id)).findFirst().orElseThrow(() -> new ResourceNotFoundException("Module", id));
+
+            module.setPosition(position);
+            position ++;
+        }
+
+        moduleRepository.saveAllAndFlush(modules);
     }
 
     private String normalizeString(String value) {
