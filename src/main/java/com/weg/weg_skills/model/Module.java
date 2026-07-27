@@ -17,8 +17,12 @@ import java.util.List;
         name = "modules",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_module_title_course",
-                        columnNames = {"title", "course_id"}
+                        name = "uk_module_course_title",
+                        columnNames = {"course_id", "title"}
+                ),
+                @UniqueConstraint(
+                        name = "uk_module_course_position",
+                        columnNames = {"course_id", "position"}
                 )
         }
 )
