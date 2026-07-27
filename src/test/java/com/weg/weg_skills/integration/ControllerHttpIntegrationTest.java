@@ -110,9 +110,9 @@ class ControllerHttpIntegrationTest {
         when(courseService.findMostEnrollments()).thenReturn(List.of(
                 new CourseWithRatingResponseDTO(1L, "Course", "Description", 9.0, null)));
         when(moduleService.findAllByCourse(1L, 0, 10)).thenReturn(new PageImpl<>(
-                List.of(new ModuleResponseDTO(2L, "Module", "Description", null)), PageRequest.of(0, 10), 1));
+                List.of(new ModuleResponseDTO(2L, "Module", "Description", 1L, null)), PageRequest.of(0, 10), 1));
         when(lessonService.findAllByModule(2L, 0, 10)).thenReturn(new PageImpl<>(
-                List.of(new LessonResponseDTO(3L, "Lesson", "Description")), PageRequest.of(0, 10), 1));
+                List.of(new LessonResponseDTO(3L, "Lesson", "Description", 1L)), PageRequest.of(0, 10), 1));
         when(reviewService.findAllByCourse(1L, 0, 10)).thenReturn(new PageImpl<>(
                 List.of(new ReviewResponseDTO(4L, 9, "Course", "User", null)), PageRequest.of(0, 10), 1));
 
@@ -127,10 +127,12 @@ class ControllerHttpIntegrationTest {
                 .andExpect(jsonPath("$[0].rating").value(9.0));
         mockMvc.perform(get("/modules/course/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].title").value("Module"));
+                .andExpect(jsonPath("$.content[0].title").value("Module"))
+                .andExpect(jsonPath("$.content[0].position").value(1));
         mockMvc.perform(get("/lessons/module/2"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].title").value("Lesson"));
+                .andExpect(jsonPath("$.content[0].title").value("Lesson"))
+                .andExpect(jsonPath("$.content[0].position").value(1));
         mockMvc.perform(get("/reviews/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].rate").value(9));
