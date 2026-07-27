@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -40,6 +41,13 @@ class RequestValidationTest {
         assertThat(validator.validate(new ModuleCreateRequestDTO("Module", "Description", -1L))).hasSize(1);
         assertThat(validator.validate(new LessonCreateRequestDTO("Lesson", "Description", null))).hasSize(1);
         assertThat(validator.validate(new CourseUpdateRequestDTO("ok", null))).hasSize(1);
+    }
+
+    @Test
+    void shouldValidateRepositionRequest() {
+        assertThat(validator.validate(new RepositionRequestDTO(1L, List.of(3L, 2L)))).isEmpty();
+        assertThat(validator.validate(new RepositionRequestDTO(0L, List.of()))).hasSize(2);
+        assertThat(validator.validate(new RepositionRequestDTO(1L, List.of(-1L)))).hasSize(1);
     }
 
     @Test
