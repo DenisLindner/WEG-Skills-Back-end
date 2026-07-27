@@ -46,6 +46,9 @@ public class Lesson {
     @Version
     private int version;
 
+    @Column(nullable = false)
+    private Long position;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -54,9 +57,10 @@ public class Lesson {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    public Lesson(String title, String description, Module module) {
+    public Lesson(String title, String description, Module module, Long position) {
         this.title = title;
         this.description = description;
         this.module = module;
+        this.position = position;
     }
 }
