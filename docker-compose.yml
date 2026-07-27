@@ -75,8 +75,10 @@ services:
       - --requirepass
       - ${REDIS_PASSWORD}
 
+    hostname: "${REDIS_HOST}"
+
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT}:6379"
 
     volumes:
       - redis_data:/data
