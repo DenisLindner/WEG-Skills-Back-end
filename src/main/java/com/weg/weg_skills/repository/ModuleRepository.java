@@ -6,8 +6,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
+
 public interface ModuleRepository extends JpaRepository<Module, Long> {
     Boolean existsByCourseAndTitleIgnoreCase(Course course, String title);
     Page<Module> findAllByCourseId(Long courseId, Pageable pageable);
-    Long countByCourse(Course course);
+    List<Module> findAllByCourseId(Long courseId);
+    Long countByCourseId(Long courseId);
+    Module findTopByCourseOrderByPositionDesc(Course course);
 }
