@@ -27,13 +27,13 @@ public final class TestData {
     }
 
     public static Module module(Long id, Course course) {
-        Module module = new Module("First Module", "Module description", course);
+        Module module = new Module("First Module", "Module description", course, 1L);
         module.setId(id);
         return module;
     }
 
     public static Lesson lesson(Long id, Module module) {
-        Lesson lesson = new Lesson("First Lesson", "Lesson description", module);
+        Lesson lesson = new Lesson("First Lesson", "Lesson description", module, 1L);
         lesson.setId(id);
         return lesson;
     }
