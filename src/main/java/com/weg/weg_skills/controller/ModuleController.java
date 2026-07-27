@@ -55,4 +55,10 @@ public class ModuleController {
         moduleService.deleteById(id, jwt.getClaim("userId"), jwt.getClaim("roles"));
         return ResponseEntity.status(204).build();
     }
+
+    @PatchMapping(path = "/reposition")
+    public ResponseEntity<Void> reposition(@RequestBody @Valid RepositionRequestDTO dto, @AuthenticationPrincipal Jwt jwt) {
+        moduleService.reposition(dto, jwt.getClaim("userId"), jwt.getClaim("roles"));
+        return ResponseEntity.status(204).build();
+    }
 }
