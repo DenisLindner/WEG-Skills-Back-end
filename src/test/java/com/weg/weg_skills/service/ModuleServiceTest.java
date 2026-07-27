@@ -4,6 +4,7 @@ import com.weg.weg_skills.TestData;
 import com.weg.weg_skills.dto.CreateMediaUploadRequestDTO;
 import com.weg.weg_skills.dto.ModuleCreateRequestDTO;
 import com.weg.weg_skills.dto.ModuleUpdateRequestDTO;
+import com.weg.weg_skills.dto.RepositionRequestDTO;
 import com.weg.weg_skills.dto.UploadTicketResponseDTO;
 import com.weg.weg_skills.enums.MediaStatus;
 import com.weg.weg_skills.enums.MediaType;
@@ -56,7 +57,9 @@ class ModuleServiceTest {
     void shouldCreateModuleForCourseOwner() {
         User instructor = TestData.user(1L, UserRole.INSTRUCTOR);
         Course course = TestData.course(2L, instructor);
+        Module previousModule = TestData.module(10L, course);
         when(courseRepository.findById(2L)).thenReturn(Optional.of(course));
+        when(moduleRepository.findTopByCourseOrderByPositionDesc(course)).thenReturn(previousModule);
         when(moduleRepository.save(any(Module.class))).thenAnswer(invocation -> {
             Module module = invocation.getArgument(0);
             module.setId(3L);
@@ -68,6 +71,7 @@ class ModuleServiceTest {
 
         assertThat(response.id()).isEqualTo(3L);
         assertThat(response.title()).isEqualTo("Module");
+        assertThat(response.position()).isEqualTo(2L);
     }
 
     @Test
@@ -161,5 +165,37 @@ class ModuleServiceTest {
 
         assertThatThrownBy(() -> service.findAllByCourse(99L, 0, 10))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void shouldRepositionModules() {
+        Course course = TestData.course(2L, TestData.user(1L, UserRole.INSTRUCTOR));
+        Module first = TestData.module(3L, course);
+        Module second = TestData.module(4L, course);
+        second.setPosition(2L);
+        List<Module> modules = List.of(first, second);
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(courseRepository.existsById(2L)).thenReturn(true);
+        when(moduleRepository.findAllByCourseId(2L)).thenReturn(modules);
+
+        service.reposition(new RepositionRequestDTO(2L, List.of(4L, 3L)),
+                1L, List.of("INSTRUCTOR"));
+
+        assertThat(second.getPosition()).isEqualTo(1L);
+        assertThat(first.getPosition()).isEqualTo(2L);
+        verify(moduleRepository).saveAllAndFlush(modules);
+    }
+
+    @Test
+    void shouldRejectInvalidModuleOrder() {
+        Course course = TestData.course(2L, TestData.user(1L, UserRole.INSTRUCTOR));
+        List<Module> modules = List.of(TestData.module(3L, course), TestData.module(4L, course));
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(courseRepository.existsById(2L)).thenReturn(true);
+        when(moduleRepository.findAllByCourseId(2L)).thenReturn(modules);
+
+        assertThatThrownBy(() -> service.reposition(
+                new RepositionRequestDTO(2L, List.of(3L, 3L)), 1L, List.of("INSTRUCTOR")))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

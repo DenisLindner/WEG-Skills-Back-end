@@ -3,6 +3,7 @@ CREATE TABLE modules (
 
     title VARCHAR(128) NOT NULL,
     description TEXT,
+    position BIGINT NOT NULL,
 
     course_id BIGINT NOT NULL,
     image_media_id BIGINT,
@@ -13,8 +14,12 @@ CREATE TABLE modules (
     CONSTRAINT pk_modules
         PRIMARY KEY (id),
 
-    CONSTRAINT uk_module_title_course
-        UNIQUE (title, course_id),
+    CONSTRAINT uk_module_course_title
+        UNIQUE (course_id, title),
+
+    CONSTRAINT uk_module_course_position
+        UNIQUE (course_id, position)
+            DEFERRABLE INITIALLY DEFERRED,
 
     CONSTRAINT uk_modules_image_media
         UNIQUE (image_media_id),

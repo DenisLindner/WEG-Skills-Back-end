@@ -52,8 +52,8 @@ class RepositoryIntegrationTest {
         User student = userRepository.save(new User(
                 "Student", "student@example.com", "password", UserRole.STUDENT));
         Course course = courseRepository.save(new Course("Java", "Description", instructor));
-        Module module = moduleRepository.save(new Module("Basics", "Description", course));
-        Lesson lesson = lessonRepository.save(new Lesson("Introduction", "Description", module));
+        Module module = moduleRepository.save(new Module("Basics", "Description", course, 1L));
+        Lesson lesson = lessonRepository.save(new Lesson("Introduction", "Description", module, 1L));
         Enrollment enrollment = enrollmentRepository.save(new Enrollment(student, course));
         Review review = reviewRepository.save(new Review(9, course, student));
         Media media = mediaRepository.save(new Media("public", "users/image.png", "image.png", "image/png",
@@ -67,6 +67,8 @@ class RepositoryIntegrationTest {
                 .contains(course);
         assertThat(moduleRepository.existsByCourseAndTitleIgnoreCase(course, "BASICS")).isTrue();
         assertThat(lessonRepository.existsByModuleAndTitleIgnoreCase(module, "INTRODUCTION")).isTrue();
+        assertThat(module.getPosition()).isEqualTo(1L);
+        assertThat(lesson.getPosition()).isEqualTo(1L);
         assertThat(enrollmentRepository.existsByUserAndCourse(student, course)).isTrue();
         assertThat(enrollmentRepository.existsByUserIdAndCourse(student.getId(), course)).isTrue();
         assertThat(reviewRepository.existsByCourseAndUser(course, student)).isTrue();
