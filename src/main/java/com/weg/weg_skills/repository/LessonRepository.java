@@ -9,4 +9,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface LessonRepository extends JpaRepository<Lesson, Long> {
     Boolean existsByModuleAndTitleIgnoreCase(Module module, String title);
     Page<Lesson> findAllByModuleId(Long moduleId, Pageable pageable);
+    Long countByModule(Module module);
 }
