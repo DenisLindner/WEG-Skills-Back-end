@@ -3,6 +3,7 @@ CREATE TABLE lessons (
 
     title VARCHAR(128) NOT NULL,
     description TEXT,
+    position BIGINT NOT NULL,
 
     module_id BIGINT NOT NULL,
     video_media_id BIGINT,
@@ -13,8 +14,12 @@ CREATE TABLE lessons (
     CONSTRAINT pk_lessons
         PRIMARY KEY (id),
 
-    CONSTRAINT uk_lesson_title_module
-        UNIQUE (title, module_id),
+    CONSTRAINT uk_lesson_module_title
+        UNIQUE (module_id, title),
+
+    CONSTRAINT uk_lesson_module_position
+        UNIQUE (module_id, position)
+            DEFERRABLE INITIALLY DEFERRED,
 
     CONSTRAINT uk_lessons_video_media
         UNIQUE (video_media_id),
