@@ -15,8 +15,12 @@ import java.time.Instant;
         name = "lessons",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_lesson_title_module",
-                        columnNames = {"title", "module_id"}
+                        name = "uk_lesson_module_title",
+                        columnNames = {"module_id", "title"}
+                ),
+                @UniqueConstraint(
+                        name = "uk_lesson_module_position",
+                        columnNames = {"module_id", "position"}
                 )
         }
 )
