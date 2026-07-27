@@ -52,15 +52,18 @@ class MapperTest {
 
         Course course = new CourseMapper().toEntity("Course", "Description", user);
         course.setId(2L);
-        Module module = new ModuleMapper().toEntity("Module", "Description", course);
+        Module module = new ModuleMapper().toEntity("Module", "Description", course, 1L);
         module.setId(3L);
-        Lesson lesson = new LessonMapper().toEntity("Lesson", "Description", module);
+        Lesson lesson = new LessonMapper().toEntity("Lesson", "Description", module, 1L);
         lesson.setId(4L);
 
         assertThat(new CourseMapper().toResponse(course, "course-image").imageUrl()).isEqualTo("course-image");
         assertThat(new ModuleMapper().toResponse(module, "module-image").imageUrl()).isEqualTo("module-image");
+        assertThat(new ModuleMapper().toResponse(module, "module-image").position()).isEqualTo(1L);
         assertThat(new LessonMapper().toResponse(lesson).id()).isEqualTo(4L);
+        assertThat(new LessonMapper().toResponse(lesson).position()).isEqualTo(1L);
         assertThat(new LessonMapper().toResponseDetails(lesson, "video-url").videoUrl()).isEqualTo("video-url");
+        assertThat(new LessonMapper().toResponseDetails(lesson, "video-url").position()).isEqualTo(1L);
     }
 
     @Test
