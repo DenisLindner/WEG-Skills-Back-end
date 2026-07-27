@@ -48,6 +48,9 @@ public class Module {
     @Version
     private int version;
 
+    @Column(nullable = false)
+    private Long position;
+
     @OneToMany(mappedBy = "module", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Lesson> lessons = new ArrayList<>();
 
@@ -59,9 +62,10 @@ public class Module {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    public Module(String title, String description, Course course) {
+    public Module(String title, String description, Course course, Long position) {
         this.title = title;
         this.description = description;
         this.course = course;
+        this.position = position;
     }
 }
