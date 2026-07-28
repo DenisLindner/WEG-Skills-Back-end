@@ -16,6 +16,7 @@ import com.weg.weg_skills.repository.*;
 import io.minio.StatObjectResponse;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -207,6 +208,7 @@ public class MediaService {
 
 
     @Transactional(noRollbackFor = MediaMetadataMismatchException.class)
+    @CacheEvict(cacheNames = "topCourses", allEntries = true)
     public MediaResponseDTO completeCourseImageUpload(Long mediaId, Long courseId, Long userId) {
         Course course = courseRepository.findById(courseId).orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
 
@@ -434,6 +436,14 @@ public class MediaService {
     public String getPublicUrl(Long mediaId) {
         Media media = findReadMediaById(mediaId);
 
+        return getPublicUrl(media);
+    }
+
+    public String getPublicUrl(Media media) {
+        if (!media.isReady()) {
+            throw new MediaNotReadyException();
+        }
+
         if (media.getMediaType() == MediaType.LESSON_VIDEO) {
             throw new InvalidMediaOperationException();
         }
@@ -447,6 +457,14 @@ public class MediaService {
     @Transactional(readOnly = true)
     public String getPlaybackVideoUrl(Long mediaId) {
         Media media = findReadMediaById(mediaId);
+
+        return getPlaybackVideoUrl(media);
+    }
+
+    public String getPlaybackVideoUrl(Media media) {
+        if (!media.isReady()) {
+            throw new MediaNotReadyException();
+        }
 
         if (media.getMediaType() != MediaType.LESSON_VIDEO) {
             throw new InvalidMediaOperationException();
