@@ -61,4 +61,10 @@ public class LessonController {
         lessonService.reposition(dto, jwt.getClaim("userId"), jwt.getClaim("roles"));
         return ResponseEntity.status(204).build();
     }
+
+    @PutMapping(path = "/{id}/completion")
+    @Operation(summary = "Complete lesson route")
+    public ResponseEntity<LessonProgressDetailsResponseDTO> completeLesson(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(200).body(lessonService.completeLesson(id, jwt.getClaim("userId")));
+    }
 }
