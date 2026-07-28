@@ -20,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -40,7 +41,7 @@ class CourseCacheTest {
     @BeforeEach
     void setUp() {
         reset(courseRepository, userRepository);
-        cacheManager.getCache("topCourses").clear();
+        Objects.requireNonNull(cacheManager.getCache("topCourses")).clear();
     }
 
     @Test
