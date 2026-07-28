@@ -11,8 +11,10 @@ import com.weg.weg_skills.enums.UserRole;
 import com.weg.weg_skills.exceptions.DuplicateResourceException;
 import com.weg.weg_skills.exceptions.ForbiddenException;
 import com.weg.weg_skills.exceptions.ResourceNotFoundException;
+import com.weg.weg_skills.mapper.CertificateMapper;
 import com.weg.weg_skills.mapper.CourseMapper;
 import com.weg.weg_skills.mapper.LessonProgressMapper;
+import com.weg.weg_skills.model.Certificate;
 import com.weg.weg_skills.model.Course;
 import com.weg.weg_skills.model.Enrollment;
 import com.weg.weg_skills.model.Lesson;
@@ -22,6 +24,7 @@ import com.weg.weg_skills.model.Module;
 import com.weg.weg_skills.model.User;
 import com.weg.weg_skills.projection.CourseWithRatingProjection;
 import com.weg.weg_skills.projection.ProgressProjection;
+import com.weg.weg_skills.repository.CertificateRepository;
 import com.weg.weg_skills.repository.CourseRepository;
 import com.weg.weg_skills.repository.EnrollmentRepository;
 import com.weg.weg_skills.repository.LessonProgressRepository;
@@ -59,6 +62,7 @@ class CourseServiceTest {
     @Mock UserRepository userRepository;
     @Mock LessonProgressRepository lessonProgressRepository;
     @Mock EnrollmentRepository enrollmentRepository;
+    @Mock CertificateRepository certificateRepository;
     @Mock CourseWithRatingProjection courseProjection;
     @Mock ProgressProjection progressProjection;
 
@@ -67,7 +71,8 @@ class CourseServiceTest {
     @BeforeEach
     void setUp() {
         service = new CourseService(courseRepository, new CourseMapper(), mediaService, userRepository,
-                lessonProgressRepository, new LessonProgressMapper(), enrollmentRepository);
+                lessonProgressRepository, new LessonProgressMapper(), enrollmentRepository,
+                certificateRepository, new CertificateMapper());
     }
 
     @Test
@@ -207,6 +212,68 @@ class CourseServiceTest {
         assertThat(response.percentage()).isEqualTo(50.0);
         assertThat(response.lessons()).singleElement().satisfies(item ->
                 assertThat(item.lessonId()).isEqualTo(5L));
+    }
+
+    @Test
+    void shouldCreateCertificateForCompletedCourse() {
+        User student = TestData.user(1L, UserRole.STUDENT);
+        Course course = TestData.course(2L, TestData.user(3L, UserRole.INSTRUCTOR));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(student));
+        when(courseRepository.findById(2L)).thenReturn(Optional.of(course));
+        when(enrollmentRepository.existsByCourseIdAndUserId(2L, 1L)).thenReturn(true);
+        when(courseRepository.findProgressByUserId(1L, 2L)).thenReturn(Optional.of(progressProjection));
+        when(progressProjection.getTotalLessons()).thenReturn(2L);
+        when(progressProjection.getCompletedLessons()).thenReturn(2L);
+        when(certificateRepository.save(any(Certificate.class))).thenAnswer(invocation -> {
+            Certificate certificate = invocation.getArgument(0);
+            certificate.setCompletedAt(Instant.now());
+            return certificate;
+        });
+
+        var response = service.createCertificate(2L, 1L);
+
+        assertThat(response.studentName()).isEqualTo("Test User");
+        assertThat(response.courseTitle()).isEqualTo("Java Basics");
+        assertThat(response.totalLessons()).isEqualTo(2L);
+        assertThat(response.code()).isNotBlank();
+        verify(certificateRepository).save(any(Certificate.class));
+    }
+
+    @Test
+    void shouldReturnExistingCertificate() {
+        User student = TestData.user(1L, UserRole.STUDENT);
+        Course course = TestData.course(2L, TestData.user(3L, UserRole.INSTRUCTOR));
+        Certificate certificate = new Certificate("existing-code", student.getName(), course.getTitle(), 2L, student, course);
+        certificate.setCompletedAt(Instant.now());
+        when(userRepository.findById(1L)).thenReturn(Optional.of(student));
+        when(courseRepository.findById(2L)).thenReturn(Optional.of(course));
+        when(enrollmentRepository.existsByCourseIdAndUserId(2L, 1L)).thenReturn(true);
+        when(certificateRepository.findByCourseIdAndUserId(2L, 1L)).thenReturn(certificate);
+
+        var response = service.createCertificate(2L, 1L);
+
+        assertThat(response.code()).isEqualTo("existing-code");
+        verify(certificateRepository, never()).save(any(Certificate.class));
+    }
+
+    @Test
+    void shouldRejectCertificateForEmptyOrIncompleteCourse() {
+        User student = TestData.user(1L, UserRole.STUDENT);
+        Course course = TestData.course(2L, TestData.user(3L, UserRole.INSTRUCTOR));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(student));
+        when(courseRepository.findById(2L)).thenReturn(Optional.of(course));
+        when(enrollmentRepository.existsByCourseIdAndUserId(2L, 1L)).thenReturn(true);
+        when(courseRepository.findProgressByUserId(1L, 2L)).thenReturn(Optional.of(progressProjection));
+        when(progressProjection.getTotalLessons()).thenReturn(0L);
+
+        assertThatThrownBy(() -> service.createCertificate(2L, 1L))
+                .isInstanceOf(IllegalStateException.class);
+
+        when(progressProjection.getTotalLessons()).thenReturn(2L);
+        when(progressProjection.getCompletedLessons()).thenReturn(1L);
+
+        assertThatThrownBy(() -> service.createCertificate(2L, 1L))
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @ParameterizedTest

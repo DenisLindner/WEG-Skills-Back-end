@@ -69,6 +69,12 @@ public class CourseController {
         return ResponseEntity.status(200).body(courseService.update(id, dto, jwt.getClaim("userId"), jwt.getClaim("roles")));
     }
 
+    @PutMapping(path = "/{id}/certificate")
+    @Operation(summary = "Generate course certificate")
+    public ResponseEntity<CertificateResponseDTO> generateCertificate(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(200).body(courseService.createCertificate(id, jwt.getClaim("userId")));
+    }
+
     @DeleteMapping(path = "/{id}")
     @Operation(summary = "Deletes a course by ID")
     public ResponseEntity<Void> deleteById(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
