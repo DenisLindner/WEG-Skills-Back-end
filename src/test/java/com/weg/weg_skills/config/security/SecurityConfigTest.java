@@ -50,7 +50,7 @@ class SecurityConfigTest {
 
         assertThat(cors).isNotNull();
         assertThat(cors.getAllowedOrigins()).containsExactly("http://localhost:3000");
-        assertThat(cors.getAllowedMethods()).contains("GET", "POST", "PATCH", "DELETE", "OPTIONS");
+        assertThat(cors.getAllowedMethods()).contains("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS");
         assertThat(cors.getAllowedHeaders()).contains("Authorization", "Content-Type", "Accept");
         assertThat(cors.getExposedHeaders()).contains(
                 "Retry-After",

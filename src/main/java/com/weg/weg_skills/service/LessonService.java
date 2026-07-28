@@ -3,16 +3,14 @@ package com.weg.weg_skills.service;
 import com.weg.weg_skills.dto.*;
 import com.weg.weg_skills.enums.UserRole;
 import com.weg.weg_skills.exceptions.DuplicateResourceException;
+import com.weg.weg_skills.exceptions.EnrollmentNotFoundException;
 import com.weg.weg_skills.exceptions.ForbiddenException;
 import com.weg.weg_skills.exceptions.ResourceNotFoundException;
 import com.weg.weg_skills.mapper.LessonMapper;
-import com.weg.weg_skills.model.Lesson;
-import com.weg.weg_skills.model.Media;
+import com.weg.weg_skills.mapper.LessonProgressMapper;
+import com.weg.weg_skills.model.*;
 import com.weg.weg_skills.model.Module;
-import com.weg.weg_skills.repository.EnrollmentRepository;
-import com.weg.weg_skills.repository.LessonRepository;
-import com.weg.weg_skills.repository.ModuleRepository;
-import com.weg.weg_skills.repository.UserRepository;
+import com.weg.weg_skills.repository.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -35,6 +33,8 @@ public class LessonService {
     private MediaService mediaService;
     private UserRepository userRepository;
     private EnrollmentRepository enrollmentRepository;
+    private LessonProgressRepository lessonProgressRepository;
+    private LessonProgressMapper lessonProgressMapper;
 
     @Transactional
     public LessonResponseDTO create(LessonCreateRequestDTO dto, Long userId, List<String> roles) {
@@ -71,6 +71,28 @@ public class LessonService {
                 .addKeyValue("courseId", lesson.getModule().getCourse().getId()).addKeyValue("userId", userId).log("Lesson created");
 
         return lessonMapper.toResponse(lesson);
+    }
+
+    @Transactional
+    public LessonProgressDetailsResponseDTO completeLesson(Long lessonId, Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("User", userId);
+        }
+
+        Lesson lesson = lessonRepository.findById(lessonId).orElseThrow(() -> new ResourceNotFoundException("Lesson", lessonId));
+        Enrollment enrollment = enrollmentRepository.findByCourseIdAndUserId(lesson.getModule().getCourse().getId(), userId).orElseThrow(() -> new EnrollmentNotFoundException(lesson.getModule().getCourse().getId(), userId));
+
+        LessonProgress lessonProgress = lessonProgressRepository.findByEnrollmentIdAndLessonId(enrollment.getId(), lesson.getId());
+
+        if (lessonProgress != null) {
+            return lessonProgressMapper.toResponseDetails(lessonProgress);
+        }
+
+        lessonProgress = lessonProgressMapper.toEntity(enrollment, lesson);
+
+        lessonProgress = lessonProgressRepository.save(lessonProgress);
+
+        return lessonProgressMapper.toResponseDetails(lessonProgress);
     }
 
     @Transactional

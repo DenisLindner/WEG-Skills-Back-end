@@ -3,14 +3,20 @@ package com.weg.weg_skills.service;
 import com.weg.weg_skills.dto.*;
 import com.weg.weg_skills.enums.UserRole;
 import com.weg.weg_skills.exceptions.DuplicateResourceException;
+import com.weg.weg_skills.exceptions.EnrollmentNotFoundException;
 import com.weg.weg_skills.exceptions.ForbiddenException;
 import com.weg.weg_skills.exceptions.ResourceNotFoundException;
 import com.weg.weg_skills.mapper.CourseMapper;
+import com.weg.weg_skills.mapper.LessonProgressMapper;
 import com.weg.weg_skills.model.Course;
+import com.weg.weg_skills.model.LessonProgress;
 import com.weg.weg_skills.model.Media;
 import com.weg.weg_skills.model.User;
 import com.weg.weg_skills.projection.CourseWithRatingProjection;
+import com.weg.weg_skills.projection.ProgressProjection;
 import com.weg.weg_skills.repository.CourseRepository;
+import com.weg.weg_skills.repository.EnrollmentRepository;
+import com.weg.weg_skills.repository.LessonProgressRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +39,9 @@ public class CourseService {
     private CourseMapper courseMapper;
     private MediaService mediaService;
     private UserRepository userRepository;
+    private LessonProgressRepository lessonProgressRepository;
+    private LessonProgressMapper lessonProgressMapper;
+    private EnrollmentRepository enrollmentRepository;
 
     @Transactional
     @CacheEvict(cacheNames = "topCourses", allEntries = true)
@@ -148,6 +157,27 @@ public class CourseService {
         Course course = courseRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Course", id));
 
         return courseMapper.toResponse(course, course.getImage() != null && course.getImage().isReady() ? mediaService.getPublicUrl(course.getImage()) : null);
+    }
+
+    @Transactional(readOnly = true)
+    public CourseProgressResponseDTO findProgressByUser(Long courseId, Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("User", userId);
+        }
+
+        if (!courseRepository.existsById(courseId)) {
+            throw new ResourceNotFoundException("Course", courseId);
+        }
+
+        if (!enrollmentRepository.existsByCourseIdAndUserId(courseId, userId)) {
+            throw new EnrollmentNotFoundException(courseId, userId);
+        }
+
+        ProgressProjection projection = courseRepository.findProgressByUserId(userId, courseId).orElseThrow(() -> new ResourceNotFoundException("Course progress", courseId));
+
+        List<LessonProgress> lessonProgresses = lessonProgressRepository.findAllByEnrollmentUserIdAndLessonModuleCourseId(userId, courseId);
+
+        return courseMapper.toResponseProgress(projection, lessonProgresses.stream().map(l -> lessonProgressMapper.toResponse(l)).toList());
     }
 
     @Transactional

@@ -12,13 +12,19 @@ import com.weg.weg_skills.exceptions.DuplicateResourceException;
 import com.weg.weg_skills.exceptions.ForbiddenException;
 import com.weg.weg_skills.exceptions.ResourceNotFoundException;
 import com.weg.weg_skills.mapper.CourseMapper;
+import com.weg.weg_skills.mapper.LessonProgressMapper;
 import com.weg.weg_skills.model.Course;
+import com.weg.weg_skills.model.Enrollment;
 import com.weg.weg_skills.model.Lesson;
+import com.weg.weg_skills.model.LessonProgress;
 import com.weg.weg_skills.model.Media;
 import com.weg.weg_skills.model.Module;
 import com.weg.weg_skills.model.User;
 import com.weg.weg_skills.projection.CourseWithRatingProjection;
+import com.weg.weg_skills.projection.ProgressProjection;
 import com.weg.weg_skills.repository.CourseRepository;
+import com.weg.weg_skills.repository.EnrollmentRepository;
+import com.weg.weg_skills.repository.LessonProgressRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,13 +57,17 @@ class CourseServiceTest {
     @Mock CourseRepository courseRepository;
     @Mock MediaService mediaService;
     @Mock UserRepository userRepository;
+    @Mock LessonProgressRepository lessonProgressRepository;
+    @Mock EnrollmentRepository enrollmentRepository;
     @Mock CourseWithRatingProjection courseProjection;
+    @Mock ProgressProjection progressProjection;
 
     private CourseService service;
 
     @BeforeEach
     void setUp() {
-        service = new CourseService(courseRepository, new CourseMapper(), mediaService, userRepository);
+        service = new CourseService(courseRepository, new CourseMapper(), mediaService, userRepository,
+                lessonProgressRepository, new LessonProgressMapper(), enrollmentRepository);
     }
 
     @Test
@@ -168,6 +178,35 @@ class CourseServiceTest {
         when(courseRepository.findById(2L)).thenReturn(Optional.of(course));
 
         assertThat(service.findById(2L).id()).isEqualTo(2L);
+    }
+
+    @Test
+    void shouldFindCourseProgress() {
+        User student = TestData.user(1L, UserRole.STUDENT);
+        Course course = TestData.course(2L, TestData.user(3L, UserRole.INSTRUCTOR));
+        Module module = TestData.module(4L, course);
+        Lesson lesson = TestData.lesson(5L, module);
+        Enrollment enrollment = new Enrollment(student, course);
+        enrollment.setId(6L);
+        LessonProgress lessonProgress = new LessonProgress(enrollment, lesson);
+        lessonProgress.setCompletedAt(Instant.now());
+
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(courseRepository.existsById(2L)).thenReturn(true);
+        when(enrollmentRepository.existsByCourseIdAndUserId(2L, 1L)).thenReturn(true);
+        when(courseRepository.findProgressByUserId(1L, 2L)).thenReturn(Optional.of(progressProjection));
+        when(progressProjection.getCourseId()).thenReturn(2L);
+        when(progressProjection.getCompletedLessons()).thenReturn(1L);
+        when(progressProjection.getTotalLessons()).thenReturn(2L);
+        when(progressProjection.getPercentage()).thenReturn(50.0);
+        when(lessonProgressRepository.findAllByEnrollmentUserIdAndLessonModuleCourseId(1L, 2L))
+                .thenReturn(List.of(lessonProgress));
+
+        var response = service.findProgressByUser(2L, 1L);
+
+        assertThat(response.percentage()).isEqualTo(50.0);
+        assertThat(response.lessons()).singleElement().satisfies(item ->
+                assertThat(item.lessonId()).isEqualTo(5L));
     }
 
     @ParameterizedTest
