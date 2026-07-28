@@ -63,7 +63,7 @@ class ReviewServiceTest {
             review.setId(4L);
             return review;
         });
-        when(mediaService.getPublicUrl(3L)).thenReturn("picture-url");
+        when(mediaService.getPublicUrl(user.getImage())).thenReturn("picture-url");
 
         var response = service.create(new ReviewCreateRequestDTO(9, 2L), 1L);
 
