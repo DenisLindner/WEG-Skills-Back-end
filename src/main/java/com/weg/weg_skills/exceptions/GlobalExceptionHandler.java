@@ -40,7 +40,7 @@ public class GlobalExceptionHandler {
         return createProblemDetail(HttpStatus.FORBIDDEN, "Forbidden", ex.getMessage(), "forbidden", request.getRequestURI());
     }
 
-    @ExceptionHandler({ResourceNotFoundException.class, UsernameNotFoundException.class})
+    @ExceptionHandler({ResourceNotFoundException.class, UsernameNotFoundException.class, EnrollmentNotFoundException.class})
     public ProblemDetail resourceNotFound(RuntimeException ex, HttpServletRequest request) {
         return createProblemDetail(HttpStatus.NOT_FOUND, "Resource not found", ex.getMessage(), "resource-not-found", request.getRequestURI());
     }
