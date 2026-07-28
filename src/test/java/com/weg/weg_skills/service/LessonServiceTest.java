@@ -13,12 +13,16 @@ import com.weg.weg_skills.exceptions.DuplicateResourceException;
 import com.weg.weg_skills.exceptions.ForbiddenException;
 import com.weg.weg_skills.exceptions.ResourceNotFoundException;
 import com.weg.weg_skills.mapper.LessonMapper;
+import com.weg.weg_skills.mapper.LessonProgressMapper;
 import com.weg.weg_skills.model.Course;
+import com.weg.weg_skills.model.Enrollment;
 import com.weg.weg_skills.model.Lesson;
+import com.weg.weg_skills.model.LessonProgress;
 import com.weg.weg_skills.model.Media;
 import com.weg.weg_skills.model.Module;
 import com.weg.weg_skills.model.User;
 import com.weg.weg_skills.repository.EnrollmentRepository;
+import com.weg.weg_skills.repository.LessonProgressRepository;
 import com.weg.weg_skills.repository.LessonRepository;
 import com.weg.weg_skills.repository.ModuleRepository;
 import com.weg.weg_skills.repository.UserRepository;
@@ -37,6 +41,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -48,13 +53,15 @@ class LessonServiceTest {
     @Mock MediaService mediaService;
     @Mock UserRepository userRepository;
     @Mock EnrollmentRepository enrollmentRepository;
+    @Mock LessonProgressRepository lessonProgressRepository;
 
     private LessonService service;
 
     @BeforeEach
     void setUp() {
         service = new LessonService(lessonRepository, new LessonMapper(), moduleRepository,
-                mediaService, userRepository, enrollmentRepository);
+                mediaService, userRepository, enrollmentRepository,
+                lessonProgressRepository, new LessonProgressMapper());
     }
 
     @Test
@@ -75,6 +82,44 @@ class LessonServiceTest {
         assertThat(response.id()).isEqualTo(4L);
         assertThat(response.title()).isEqualTo("Lesson");
         assertThat(response.position()).isEqualTo(2L);
+    }
+
+    @Test
+    void shouldCompleteLesson() {
+        Lesson lesson = TestData.lesson(4L, module());
+        Enrollment enrollment = new Enrollment(TestData.user(10L, UserRole.STUDENT), lesson.getModule().getCourse());
+        enrollment.setId(5L);
+        when(userRepository.existsById(10L)).thenReturn(true);
+        when(lessonRepository.findById(4L)).thenReturn(Optional.of(lesson));
+        when(enrollmentRepository.findByCourseIdAndUserId(2L, 10L)).thenReturn(Optional.of(enrollment));
+        when(lessonProgressRepository.save(any(LessonProgress.class))).thenAnswer(invocation -> {
+            LessonProgress progress = invocation.getArgument(0);
+            progress.setCompletedAt(Instant.now());
+            return progress;
+        });
+
+        var response = service.completeLesson(4L, 10L);
+
+        assertThat(response.lessonId()).isEqualTo(4L);
+        assertThat(response.enrollmentId()).isEqualTo(5L);
+    }
+
+    @Test
+    void shouldReturnExistingLessonProgress() {
+        Lesson lesson = TestData.lesson(4L, module());
+        Enrollment enrollment = new Enrollment(TestData.user(10L, UserRole.STUDENT), lesson.getModule().getCourse());
+        enrollment.setId(5L);
+        LessonProgress progress = new LessonProgress(enrollment, lesson);
+        progress.setCompletedAt(Instant.now());
+        when(userRepository.existsById(10L)).thenReturn(true);
+        when(lessonRepository.findById(4L)).thenReturn(Optional.of(lesson));
+        when(enrollmentRepository.findByCourseIdAndUserId(2L, 10L)).thenReturn(Optional.of(enrollment));
+        when(lessonProgressRepository.findByEnrollmentIdAndLessonId(5L, 4L)).thenReturn(progress);
+
+        var response = service.completeLesson(4L, 10L);
+
+        assertThat(response.completedAt()).isEqualTo(progress.getCompletedAt());
+        verify(lessonProgressRepository, never()).save(any());
     }
 
     @Test
