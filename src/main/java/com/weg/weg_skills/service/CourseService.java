@@ -6,18 +6,13 @@ import com.weg.weg_skills.exceptions.DuplicateResourceException;
 import com.weg.weg_skills.exceptions.EnrollmentNotFoundException;
 import com.weg.weg_skills.exceptions.ForbiddenException;
 import com.weg.weg_skills.exceptions.ResourceNotFoundException;
+import com.weg.weg_skills.mapper.CertificateMapper;
 import com.weg.weg_skills.mapper.CourseMapper;
 import com.weg.weg_skills.mapper.LessonProgressMapper;
-import com.weg.weg_skills.model.Course;
-import com.weg.weg_skills.model.LessonProgress;
-import com.weg.weg_skills.model.Media;
-import com.weg.weg_skills.model.User;
+import com.weg.weg_skills.model.*;
 import com.weg.weg_skills.projection.CourseWithRatingProjection;
 import com.weg.weg_skills.projection.ProgressProjection;
-import com.weg.weg_skills.repository.CourseRepository;
-import com.weg.weg_skills.repository.EnrollmentRepository;
-import com.weg.weg_skills.repository.LessonProgressRepository;
-import com.weg.weg_skills.repository.UserRepository;
+import com.weg.weg_skills.repository.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -30,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -42,6 +38,8 @@ public class CourseService {
     private LessonProgressRepository lessonProgressRepository;
     private LessonProgressMapper lessonProgressMapper;
     private EnrollmentRepository enrollmentRepository;
+    private CertificateRepository certificateRepository;
+    private CertificateMapper certificateMapper;
 
     @Transactional
     @CacheEvict(cacheNames = "topCourses", allEntries = true)
@@ -244,7 +242,46 @@ public class CourseService {
         log.atInfo().addKeyValue("courseId", id).addKeyValue("userId", userId).log("Course deleted");
     }
 
+    @Transactional
+    public CertificateResponseDTO createCertificate(Long courseId, Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        Course course = courseRepository.findById(courseId).orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
+
+        if (!enrollmentRepository.existsByCourseIdAndUserId(courseId, userId)) {
+            throw new EnrollmentNotFoundException(courseId, userId);
+        }
+
+        Certificate certificate = certificateRepository.findByCourseIdAndUserId(courseId, userId);
+
+        if (certificate != null) {
+            return certificateMapper.toResponse(certificate);
+        }
+
+        ProgressProjection projection = courseRepository.findProgressByUserId(user.getId(), course.getId()).orElseThrow(() -> new ResourceNotFoundException("Course progress", courseId));
+
+        if (projection.getTotalLessons() <= 0) {
+            throw new IllegalStateException("Course don't have lessons yet");
+        }
+
+        if (!projection.getTotalLessons().equals(projection.getCompletedLessons())) {
+            throw new IllegalStateException("User hasn't finished the course yet");
+        }
+
+        String code = generateCertificateCode();
+
+        certificate = certificateMapper.toEntity(code, user.getName(), course.getTitle(), projection.getTotalLessons(), course, user);
+
+        certificate = certificateRepository.save(certificate);
+
+        return certificateMapper.toResponse(certificate);
+    }
+
     private String normalizeString(String value) {
         return value.trim();
+    }
+
+    private String generateCertificateCode() {
+        return UUID.randomUUID().toString().replace("-", "");
     }
 }
