@@ -4,9 +4,12 @@ import com.weg.weg_skills.TestData;
 import com.weg.weg_skills.dto.CourseCreateRequestDTO;
 import com.weg.weg_skills.enums.UserRole;
 import com.weg.weg_skills.mapper.CourseMapper;
+import com.weg.weg_skills.mapper.LessonProgressMapper;
 import com.weg.weg_skills.model.Course;
 import com.weg.weg_skills.projection.CourseWithRatingProjection;
 import com.weg.weg_skills.repository.CourseRepository;
+import com.weg.weg_skills.repository.EnrollmentRepository;
+import com.weg.weg_skills.repository.LessonProgressRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -92,12 +95,25 @@ class CourseCacheTest {
         }
 
         @Bean
+        LessonProgressRepository lessonProgressRepository() {
+            return mock(LessonProgressRepository.class);
+        }
+
+        @Bean
+        EnrollmentRepository enrollmentRepository() {
+            return mock(EnrollmentRepository.class);
+        }
+
+        @Bean
         CourseService courseService(
                 CourseRepository courseRepository,
                 MediaService mediaService,
-                UserRepository userRepository
+                UserRepository userRepository,
+                LessonProgressRepository lessonProgressRepository,
+                EnrollmentRepository enrollmentRepository
         ) {
-            return new CourseService(courseRepository, new CourseMapper(), mediaService, userRepository);
+            return new CourseService(courseRepository, new CourseMapper(), mediaService, userRepository,
+                    lessonProgressRepository, new LessonProgressMapper(), enrollmentRepository);
         }
     }
 }
