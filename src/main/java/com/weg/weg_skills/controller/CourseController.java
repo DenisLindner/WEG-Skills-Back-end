@@ -57,6 +57,12 @@ public class CourseController {
         return ResponseEntity.status(200).body(courseService.findById(id));
     }
 
+    @GetMapping(path = "/{id}/progress/me")
+    @Operation(summary = "Find progress of current user")
+    public ResponseEntity<CourseProgressResponseDTO> progressUser(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(200).body(courseService.findProgressByUser(id, jwt.getClaim("userId")));
+    }
+
     @PatchMapping(path = "/{id}")
     @Operation(summary = "Partially updates a course")
     public ResponseEntity<CourseResponseDTO> update(@PathVariable Long id, @RequestBody @Valid CourseUpdateRequestDTO dto, @AuthenticationPrincipal Jwt jwt) {
