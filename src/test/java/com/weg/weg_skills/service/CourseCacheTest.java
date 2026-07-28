@@ -3,10 +3,12 @@ package com.weg.weg_skills.service;
 import com.weg.weg_skills.TestData;
 import com.weg.weg_skills.dto.CourseCreateRequestDTO;
 import com.weg.weg_skills.enums.UserRole;
+import com.weg.weg_skills.mapper.CertificateMapper;
 import com.weg.weg_skills.mapper.CourseMapper;
 import com.weg.weg_skills.mapper.LessonProgressMapper;
 import com.weg.weg_skills.model.Course;
 import com.weg.weg_skills.projection.CourseWithRatingProjection;
+import com.weg.weg_skills.repository.CertificateRepository;
 import com.weg.weg_skills.repository.CourseRepository;
 import com.weg.weg_skills.repository.EnrollmentRepository;
 import com.weg.weg_skills.repository.LessonProgressRepository;
@@ -105,15 +107,22 @@ class CourseCacheTest {
         }
 
         @Bean
+        CertificateRepository certificateRepository() {
+            return mock(CertificateRepository.class);
+        }
+
+        @Bean
         CourseService courseService(
                 CourseRepository courseRepository,
                 MediaService mediaService,
                 UserRepository userRepository,
                 LessonProgressRepository lessonProgressRepository,
-                EnrollmentRepository enrollmentRepository
+                EnrollmentRepository enrollmentRepository,
+                CertificateRepository certificateRepository
         ) {
             return new CourseService(courseRepository, new CourseMapper(), mediaService, userRepository,
-                    lessonProgressRepository, new LessonProgressMapper(), enrollmentRepository);
+                    lessonProgressRepository, new LessonProgressMapper(), enrollmentRepository,
+                    certificateRepository, new CertificateMapper());
         }
     }
 }
