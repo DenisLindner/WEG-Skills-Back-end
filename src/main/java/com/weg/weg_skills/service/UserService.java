@@ -53,7 +53,7 @@ public class UserService {
     public UserResponseDTO getMeProfile(Long id) {
         User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User", id));
 
-        return userMapper.toResponse(user, user.getImage() != null && user.getImage().isReady() ? mediaService.getPublicUrl(user.getImage().getId()) : null);
+        return userMapper.toResponse(user, user.getImage() != null && user.getImage().isReady() ? mediaService.getPublicUrl(user.getImage()) : null);
     }
 
     @Transactional
@@ -122,7 +122,7 @@ public class UserService {
 
         log.atInfo().addKeyValue("userId", id).log("User updated");
 
-        return userMapper.toResponse(user, user.getImage() != null && user.getImage().isReady() ? mediaService.getPublicUrl(user.getImage().getId()) : null);
+        return userMapper.toResponse(user, user.getImage() != null && user.getImage().isReady() ? mediaService.getPublicUrl(user.getImage()) : null);
     }
 
     @Transactional
