@@ -18,6 +18,7 @@ import com.weg.weg_skills.dto.ReviewUpdateRequestDTO;
 import com.weg.weg_skills.dto.UserUpdateRequestDTO;
 import com.weg.weg_skills.service.CourseService;
 import com.weg.weg_skills.service.AuthService;
+import com.weg.weg_skills.service.CertificateService;
 import com.weg.weg_skills.service.EnrollmentService;
 import com.weg.weg_skills.service.LessonService;
 import com.weg.weg_skills.service.MediaService;
@@ -46,6 +47,7 @@ class ControllerTest {
     @Mock EnrollmentService enrollmentService;
     @Mock ReviewService reviewService;
     @Mock MediaService mediaService;
+    @Mock CertificateService certificateService;
 
     @Test
     void shouldDelegateAuthenticationEndpoints() {
@@ -99,6 +101,7 @@ class ControllerTest {
         assertThat(controller.findMostEnrollments().getStatusCode().value()).isEqualTo(200);
         assertThat(controller.findById(2L).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.progressUser(2L, jwt).getStatusCode().value()).isEqualTo(200);
+        assertThat(controller.generateCertificate(2L, jwt).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.update(2L, update, jwt).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.deleteById(2L, jwt).getStatusCode().value()).isEqualTo(204);
 
@@ -109,8 +112,18 @@ class ControllerTest {
         verify(courseService).findMostEnrollments();
         verify(courseService).findById(2L);
         verify(courseService).findProgressByUser(2L, 1L);
+        verify(courseService).createCertificate(2L, 1L);
         verify(courseService).update(2L, update, 1L, List.of("INSTRUCTOR"));
         verify(courseService).deleteById(2L, 1L, List.of("INSTRUCTOR"));
+    }
+
+    @Test
+    void shouldDelegateCertificateValidation() {
+        CertificateController controller = new CertificateController(certificateService);
+
+        assertThat(controller.validate("certificate-code").getStatusCode().value()).isEqualTo(200);
+
+        verify(certificateService).validateCertificate("certificate-code");
     }
 
     @Test
