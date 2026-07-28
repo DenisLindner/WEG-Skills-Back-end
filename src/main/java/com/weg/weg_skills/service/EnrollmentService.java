@@ -13,6 +13,7 @@ import com.weg.weg_skills.repository.EnrollmentRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -30,6 +31,7 @@ public class EnrollmentService {
     private final CourseRepository courseRepository;
 
     @Transactional
+    @CacheEvict(cacheNames = "topCourses", allEntries = true)
     public EnrollmentResponseDTO enrollUser(EnrollmentRequestDTO dto, Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));

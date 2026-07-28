@@ -40,6 +40,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -114,9 +115,10 @@ class CourseServiceTest {
     void shouldListCoursesWithReadyImages() {
         User instructor = TestData.user(1L, UserRole.INSTRUCTOR);
         Course course = TestData.course(2L, instructor);
-        course.setImage(TestData.media(3L, instructor, MediaType.COURSE_IMAGE, MediaStatus.READY));
+        Media image = TestData.media(3L, instructor, MediaType.COURSE_IMAGE, MediaStatus.READY);
+        course.setImage(image);
         when(courseRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(course)));
-        when(mediaService.getPublicUrl(3L)).thenReturn("image-url");
+        when(mediaService.getPublicUrl(image)).thenReturn("image-url");
 
         var response = service.findAll(0, 10);
 
@@ -137,7 +139,7 @@ class CourseServiceTest {
 
         assertThat(response.getContent()).singleElement().satisfies(item ->
                 assertThat(item.title()).isEqualTo("Java Basics"));
-        verify(courseRepository).findAllByTitleContainingIgnoreCase("Java", any(Pageable.class));
+        verify(courseRepository).findAllByTitleContainingIgnoreCase(eq("Java"), any(Pageable.class));
     }
 
     @Test
@@ -223,6 +225,6 @@ class CourseServiceTest {
         when(courseRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.findById(99L)).isInstanceOf(ResourceNotFoundException.class);
-        verify(mediaService, never()).getPublicUrl(any());
+        verify(mediaService, never()).getPublicUrl(any(Media.class));
     }
 }

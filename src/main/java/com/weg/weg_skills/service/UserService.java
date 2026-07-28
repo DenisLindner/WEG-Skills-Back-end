@@ -9,6 +9,7 @@ import com.weg.weg_skills.model.User;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,7 +54,7 @@ public class UserService {
     public UserResponseDTO getMeProfile(Long id) {
         User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User", id));
 
-        return userMapper.toResponse(user, user.getImage() != null && user.getImage().isReady() ? mediaService.getPublicUrl(user.getImage().getId()) : null);
+        return userMapper.toResponse(user, user.getImage() != null && user.getImage().isReady() ? mediaService.getPublicUrl(user.getImage()) : null);
     }
 
     @Transactional
@@ -122,7 +123,7 @@ public class UserService {
 
         log.atInfo().addKeyValue("userId", id).log("User updated");
 
-        return userMapper.toResponse(user, user.getImage() != null && user.getImage().isReady() ? mediaService.getPublicUrl(user.getImage().getId()) : null);
+        return userMapper.toResponse(user, user.getImage() != null && user.getImage().isReady() ? mediaService.getPublicUrl(user.getImage()) : null);
     }
 
     @Transactional
@@ -141,6 +142,7 @@ public class UserService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "topCourses", allEntries = true)
     public void deleteById(Long id) {
         User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User", id));
 

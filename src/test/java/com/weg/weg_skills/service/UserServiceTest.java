@@ -94,7 +94,7 @@ class UserServiceTest {
         Media image = TestData.media(2L, user, MediaType.USER_IMAGE, MediaStatus.READY);
         user.setImage(image);
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(mediaService.getPublicUrl(2L)).thenReturn("picture-url");
+        when(mediaService.getPublicUrl(user.getImage())).thenReturn("picture-url");
 
         var response = service.getMeProfile(1L);
 

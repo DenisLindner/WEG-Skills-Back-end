@@ -116,14 +116,14 @@ public class ModuleService {
 
         Page<Module> modules = moduleRepository.findAllByCourseId(courseId, pageable);
 
-        return modules.map(m -> moduleMapper.toResponse(m, m.getImage() != null && m.getImage().isReady() ? mediaService.getPublicUrl(m.getImage().getId()) : null));
+        return modules.map(m -> moduleMapper.toResponse(m, m.getImage() != null && m.getImage().isReady() ? mediaService.getPublicUrl(m.getImage()) : null));
     }
 
     @Transactional(readOnly = true)
     public ModuleResponseDTO findById(Long id) {
         Module module = moduleRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Module", id));
 
-        return moduleMapper.toResponse(module, module.getImage() != null && module.getImage().isReady() ? mediaService.getPublicUrl(module.getImage().getId()) : null);
+        return moduleMapper.toResponse(module, module.getImage() != null && module.getImage().isReady() ? mediaService.getPublicUrl(module.getImage()) : null);
     }
 
     @Transactional
@@ -154,7 +154,7 @@ public class ModuleService {
 
         log.atInfo().addKeyValue("moduleId", id).addKeyValue("userId", userId).log("Module updated");
 
-        return moduleMapper.toResponse(module, module.getImage() != null && module.getImage().isReady() ? mediaService.getPublicUrl(module.getImage().getId()) : null);
+        return moduleMapper.toResponse(module, module.getImage() != null && module.getImage().isReady() ? mediaService.getPublicUrl(module.getImage()) : null);
     }
 
     @Transactional

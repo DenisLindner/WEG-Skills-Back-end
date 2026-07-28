@@ -139,7 +139,7 @@ public class LessonService {
             }
         }
 
-        return lessonMapper.toResponseDetails(lesson, lesson.getVideo() != null && lesson.getVideo().isReady() ? mediaService.getPlaybackVideoUrl(lesson.getVideo().getId()): null);
+        return lessonMapper.toResponseDetails(lesson, lesson.getVideo() != null && lesson.getVideo().isReady() ? mediaService.getPlaybackVideoUrl(lesson.getVideo()): null);
     }
 
     @Transactional

@@ -14,6 +14,8 @@ import com.weg.weg_skills.repository.CourseRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +35,7 @@ public class CourseService {
     private UserRepository userRepository;
 
     @Transactional
+    @CacheEvict(cacheNames = "topCourses", allEntries = true)
     public CourseResponseDTO create(CourseCreateRequestDTO dto, Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
@@ -99,7 +102,7 @@ public class CourseService {
         Page<Course> courses = courseRepository.findAll(pageable);
 
         return courses.map(c ->
-            courseMapper.toResponse(c, c.getImage() != null && c.getImage().isReady() ? mediaService.getPublicUrl(c.getImage().getId()) : null)
+            courseMapper.toResponse(c, c.getImage() != null && c.getImage().isReady() ? mediaService.getPublicUrl(c.getImage()) : null)
         );
     }
 
@@ -121,11 +124,12 @@ public class CourseService {
         Page<Course> courses = courseRepository.findAllByTitleContainingIgnoreCase(title.trim(), pageable);
 
         return courses.map(c ->
-            courseMapper.toResponse(c, c.getImage() != null && c.getImage().isReady() ? mediaService.getPublicUrl(c.getImage().getId()) : null)
+            courseMapper.toResponse(c, c.getImage() != null && c.getImage().isReady() ? mediaService.getPublicUrl(c.getImage()) : null)
         );
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "topCourses")
     public List<CourseWithRatingResponseDTO> findMostEnrollments() {
         Pageable pageable = PageRequest.of(
                 0, 3,
@@ -135,7 +139,7 @@ public class CourseService {
         List<CourseWithRatingProjection> courses = courseRepository.findMostEnrollmentsCourses(pageable);
 
         return courses.stream().map(c ->
-            courseMapper.toResponseProjection(c, c.getImage() != null && c.getImage().isReady() ? mediaService.getPublicUrl(c.getImage().getId()) : null)
+            courseMapper.toResponseProjection(c, c.getImage() != null && c.getImage().isReady() ? mediaService.getPublicUrl(c.getImage()) : null)
         ).toList();
     }
 
@@ -143,10 +147,11 @@ public class CourseService {
     public CourseResponseDTO findById(Long id) {
         Course course = courseRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Course", id));
 
-        return courseMapper.toResponse(course, course.getImage() != null && course.getImage().isReady() ? mediaService.getPublicUrl(course.getImage().getId()) : null);
+        return courseMapper.toResponse(course, course.getImage() != null && course.getImage().isReady() ? mediaService.getPublicUrl(course.getImage()) : null);
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "topCourses", allEntries = true)
     public CourseResponseDTO update(Long id, CourseUpdateRequestDTO dto, Long userId, List<String> roles) {
         Course course = courseRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Course", id));
 
@@ -173,10 +178,11 @@ public class CourseService {
 
         log.atInfo().addKeyValue("courseId", id).addKeyValue("userId", userId).log("Course updated");
 
-        return courseMapper.toResponse(course, course.getImage() != null && course.getImage().isReady() ? mediaService.getPublicUrl(course.getImage().getId()) : null);
+        return courseMapper.toResponse(course, course.getImage() != null && course.getImage().isReady() ? mediaService.getPublicUrl(course.getImage()) : null);
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "topCourses", allEntries = true)
     public void deleteById(Long id, Long userId, List<String> roles) {
         Course course = courseRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Course", id));
 

@@ -16,6 +16,7 @@ import com.weg.weg_skills.repository.ReviewRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -37,6 +38,7 @@ public class ReviewService {
     private MediaService mediaService;
 
     @Transactional
+    @CacheEvict(cacheNames = "topCourses", allEntries = true)
     public ReviewResponseDTO create(ReviewCreateRequestDTO dto, Long userId) {
         Course course = courseRepository.findById(dto.courseId()).orElseThrow(() -> new ResourceNotFoundException("Course", dto.courseId()));
 
@@ -56,7 +58,7 @@ public class ReviewService {
 
         log.atInfo().addKeyValue("courseId", course.getId()).addKeyValue("userId", userId).log("Review created");
 
-        return reviewMapper.toResponse(review, review.getUser().getImage() != null && review.getUser().getImage().isReady() ? mediaService.getPublicUrl(review.getUser().getImage().getId()) : null);
+        return reviewMapper.toResponse(review, review.getUser().getImage() != null && review.getUser().getImage().isReady() ? mediaService.getPublicUrl(review.getUser().getImage()) : null);
     }
 
     @Transactional(readOnly = true)
@@ -76,7 +78,7 @@ public class ReviewService {
 
         Page<Review> reviews = reviewRepository.findAllByCourseId(courseId, pageable);
 
-        return reviews.map(r -> reviewMapper.toResponse(r, r.getUser().getImage() != null && r.getUser().getImage().isReady() ? mediaService.getPublicUrl(r.getUser().getImage().getId()) : null));
+        return reviews.map(r -> reviewMapper.toResponse(r, r.getUser().getImage() != null && r.getUser().getImage().isReady() ? mediaService.getPublicUrl(r.getUser().getImage()) : null));
     }
 
     @Transactional(readOnly = true)
@@ -96,10 +98,11 @@ public class ReviewService {
 
         Page<Review> reviews = reviewRepository.findAllByUserId(userId, pageable);
 
-        return reviews.map(r -> reviewMapper.toResponse(r, r.getUser().getImage() != null && r.getUser().getImage().isReady() ? mediaService.getPublicUrl(r.getUser().getImage().getId()) : null));
+        return reviews.map(r -> reviewMapper.toResponse(r, r.getUser().getImage() != null && r.getUser().getImage().isReady() ? mediaService.getPublicUrl(r.getUser().getImage()) : null));
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "topCourses", allEntries = true)
     public ReviewResponseDTO update(Long id, ReviewUpdateRequestDTO dto, Long userId) {
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User", userId);
@@ -117,10 +120,11 @@ public class ReviewService {
 
         log.atInfo().addKeyValue("reviewId", id).addKeyValue("userId", userId).log("Review updated");
 
-        return reviewMapper.toResponse(review, review.getUser().getImage() != null && review.getUser().getImage().isReady() ? mediaService.getPublicUrl(review.getUser().getImage().getId()) : null);
+        return reviewMapper.toResponse(review, review.getUser().getImage() != null && review.getUser().getImage().isReady() ? mediaService.getPublicUrl(review.getUser().getImage()) : null);
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "topCourses", allEntries = true)
     public void deleteById(Long id, Long userId) {
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User", userId);

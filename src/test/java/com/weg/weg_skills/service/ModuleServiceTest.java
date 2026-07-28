@@ -114,7 +114,7 @@ class ModuleServiceTest {
         module.setImage(TestData.media(4L, course.getInstructor(), MediaType.MODULE_IMAGE, MediaStatus.READY));
         when(courseRepository.existsById(2L)).thenReturn(true);
         when(moduleRepository.findAllByCourseId(any(), any())).thenReturn(new PageImpl<>(List.of(module)));
-        when(mediaService.getPublicUrl(4L)).thenReturn("image-url");
+        when(mediaService.getPublicUrl(module.getImage())).thenReturn("image-url");
 
         assertThat(service.findAllByCourse(2L, 0, 10).getContent())
                 .singleElement().satisfies(item -> assertThat(item.imageUrl()).isEqualTo("image-url"));

@@ -129,7 +129,7 @@ class LessonServiceTest {
         when(userRepository.existsById(10L)).thenReturn(true);
         when(lessonRepository.findById(4L)).thenReturn(Optional.of(lesson));
         when(enrollmentRepository.existsByUserIdAndCourse(10L, lesson.getModule().getCourse())).thenReturn(true);
-        when(mediaService.getPlaybackVideoUrl(5L)).thenReturn("video-url");
+        when(mediaService.getPlaybackVideoUrl(lesson.getVideo())).thenReturn("video-url");
 
         var response = service.findById(4L, 10L, List.of("STUDENT"));
 
