@@ -6,12 +6,14 @@ import com.weg.weg_skills.enums.MediaType;
 import com.weg.weg_skills.model.Course;
 import com.weg.weg_skills.model.Enrollment;
 import com.weg.weg_skills.model.Lesson;
+import com.weg.weg_skills.model.LessonProgress;
 import com.weg.weg_skills.model.Module;
 import com.weg.weg_skills.model.Media;
 import com.weg.weg_skills.model.Review;
 import com.weg.weg_skills.model.User;
 import com.weg.weg_skills.repository.CourseRepository;
 import com.weg.weg_skills.repository.EnrollmentRepository;
+import com.weg.weg_skills.repository.LessonProgressRepository;
 import com.weg.weg_skills.repository.LessonRepository;
 import com.weg.weg_skills.repository.ModuleRepository;
 import com.weg.weg_skills.repository.MediaRepository;
@@ -42,6 +44,7 @@ class RepositoryIntegrationTest {
     @Autowired ModuleRepository moduleRepository;
     @Autowired LessonRepository lessonRepository;
     @Autowired EnrollmentRepository enrollmentRepository;
+    @Autowired LessonProgressRepository lessonProgressRepository;
     @Autowired ReviewRepository reviewRepository;
     @Autowired MediaRepository mediaRepository;
 
@@ -55,6 +58,7 @@ class RepositoryIntegrationTest {
         Module module = moduleRepository.save(new Module("Basics", "Description", course, 1L));
         Lesson lesson = lessonRepository.save(new Lesson("Introduction", "Description", module, 1L));
         Enrollment enrollment = enrollmentRepository.save(new Enrollment(student, course));
+        LessonProgress lessonProgress = lessonProgressRepository.save(new LessonProgress(enrollment, lesson));
         Review review = reviewRepository.save(new Review(9, course, student));
         Media media = mediaRepository.save(new Media("public", "users/image.png", "image.png", "image/png",
                 100L, MediaType.USER_IMAGE, MediaStatus.PENDING_UPLOAD, student));
@@ -76,6 +80,16 @@ class RepositoryIntegrationTest {
         assertThat(moduleRepository.findAllByCourseId(course.getId(), PageRequest.of(0, 10))).contains(module);
         assertThat(lessonRepository.findAllByModuleId(module.getId(), PageRequest.of(0, 10))).contains(lesson);
         assertThat(enrollmentRepository.findAllByUser(student, PageRequest.of(0, 10))).contains(enrollment);
+        assertThat(lessonProgressRepository.findByEnrollmentIdAndLessonId(enrollment.getId(), lesson.getId()))
+                .isEqualTo(lessonProgress);
+        assertThat(lessonProgressRepository.findAllByEnrollmentUserIdAndLessonModuleCourseId(
+                student.getId(), course.getId())).contains(lessonProgress);
+        assertThat(courseRepository.findProgressByUserId(student.getId(), course.getId()))
+                .hasValueSatisfying(progress -> {
+                    assertThat(progress.getCompletedLessons()).isEqualTo(1L);
+                    assertThat(progress.getTotalLessons()).isEqualTo(1L);
+                    assertThat(progress.getPercentage()).isEqualTo(100.0);
+                });
         assertThat(reviewRepository.findAllByCourseId(course.getId(), PageRequest.of(0, 10))).contains(review);
         assertThat(reviewRepository.findAllByUserId(student.getId(), PageRequest.of(0, 10))).contains(review);
         assertThat(mediaRepository.findByCreatedAtBeforeAndMediaStatus(
