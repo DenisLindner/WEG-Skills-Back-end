@@ -1,0 +1,147 @@
+package com.weg.weg_skills.service;
+
+import com.weg.weg_skills.config.minio.MinioProperties;
+import com.weg.weg_skills.dto.MinioUploadTicketDTO;
+import com.weg.weg_skills.exceptions.StorageServiceException;
+import io.minio.*;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Service;
+
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+@Slf4j
+@Service
+public class MinioService {
+    private final MinioClient minioClient;
+    private final MinioClient publicMinioClient;
+    private final MinioProperties minioProperties;
+
+    public MinioService(
+            MinioClient minioClient,
+            @Qualifier("publicMinioClient") MinioClient publicMinioClient,
+            MinioProperties minioProperties
+    ) {
+        this.minioClient = minioClient;
+        this.publicMinioClient = publicMinioClient;
+        this.minioProperties = minioProperties;
+    }
+
+    public MinioUploadTicketDTO createUploadTicket(
+            String bucket,
+            String objectKey,
+            String contentType,
+            long maximumSize
+    ) {
+        ZonedDateTime expiresAt = ZonedDateTime.now(ZoneOffset.UTC)
+                .plus(minioProperties.uploadExpiration());
+
+        try {
+            PostPolicy policy = new PostPolicy(bucket, expiresAt);
+
+            policy.addEqualsCondition("key", objectKey);
+            policy.addEqualsCondition("Content-Type", contentType);
+            policy.addContentLengthRangeCondition(1, maximumSize);
+
+            Map<String, String> fields = new HashMap<>(
+                    minioClient.getPresignedPostFormData(policy)
+            );
+
+            fields.put("key", objectKey);
+            fields.put("Content-Type", contentType);
+
+            return new MinioUploadTicketDTO(
+                    buildBucketUrl(bucket),
+                    objectKey,
+                    fields,
+                    expiresAt.toInstant()
+            );
+        } catch (Exception e) {
+            log.atError().addKeyValue("bucket", bucket).addKeyValue("objectKey", objectKey).log("Failed to create upload ticket");
+            throw new StorageServiceException("Failed to generate upload ticket", e);
+        }
+    }
+
+    public StatObjectResponse getObjectMetadata(
+            String bucket,
+            String objectKey
+    ) {
+        try {
+            return minioClient.statObject(
+                    StatObjectArgs.builder()
+                            .bucket(bucket)
+                            .object(objectKey)
+                            .build()
+            );
+        } catch (Exception e) {
+            log.atError().addKeyValue("bucket", bucket).addKeyValue("objectKey", objectKey).log("Failed to get object metadata");
+            throw new StorageServiceException("Failed to get object metadata", e);
+        }
+    }
+
+    public String createPrivateReadUrl(
+            String bucket,
+            String objectKey
+    ) {
+        try {
+            long expirationSeconds = minioProperties.playbackExpiration().toSeconds();
+
+            return publicMinioClient.getPresignedObjectUrl(
+                    GetPresignedObjectUrlArgs.builder()
+                            .method(Http.Method.GET)
+                            .bucket(bucket)
+                            .object(objectKey)
+                            .expiry(
+                                    Math.toIntExact(expirationSeconds),
+                                    TimeUnit.SECONDS
+                            )
+                            .build()
+            );
+        } catch (Exception e) {
+            log.atError().addKeyValue("bucket", bucket).addKeyValue("objectKey", objectKey).log("Failed to create private url");
+            throw new StorageServiceException("Failed to create private url", e);
+        }
+    }
+
+    public String createPublicUrl(
+            String bucket,
+            String objectKey
+    ) {
+        return removeTrailingSlash(minioProperties.publicEndpoint())
+                + "/"
+                + bucket
+                + "/"
+                + objectKey;
+    }
+
+    public void deleteObject(
+            String bucket,
+            String objectKey
+    ) {
+        try {
+            minioClient.removeObject(
+                    RemoveObjectArgs.builder()
+                            .bucket(bucket)
+                            .object(objectKey)
+                            .build()
+            );
+        } catch (Exception e) {
+            log.atError().addKeyValue("bucket", bucket).addKeyValue("objectKey", objectKey).log("Failed to delete object");
+            throw new StorageServiceException("Failed to delete object", e);
+        }
+    }
+
+    private String buildBucketUrl(String bucket) {
+        return removeTrailingSlash(minioProperties.publicEndpoint())
+                + "/"
+                + bucket;
+    }
+
+    private String removeTrailingSlash(String value) {
+        return value.replaceAll("/+$", "");
+    }
+}
