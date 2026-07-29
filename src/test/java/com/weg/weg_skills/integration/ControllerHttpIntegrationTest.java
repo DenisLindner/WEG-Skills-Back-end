@@ -100,6 +100,22 @@ class ControllerHttpIntegrationTest {
     }
 
     @Test
+    void shouldReturnInvalidFields() throws Exception {
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name":"Jo",
+                                  "email":"invalid-email",
+                                  "password":"Strong1!"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.name").value("Name must contain between 3 and 128 characters"))
+                .andExpect(jsonPath("$.errors.email").value("Email must be a valid email"));
+    }
+
+    @Test
     void shouldListCatalogResourcesThroughHttp() throws Exception {
         when(courseService.findAllPublished(0, 10)).thenReturn(new PageImpl<>(
                 List.of(new CourseResponseDTO(1L, "Course", "Description", CourseStatus.PUBLISHED, null)), PageRequest.of(0, 10), 1));
