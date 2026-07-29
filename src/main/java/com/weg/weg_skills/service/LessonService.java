@@ -14,6 +14,7 @@ import com.weg.weg_skills.model.Module;
 import com.weg.weg_skills.repository.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -38,6 +39,7 @@ public class LessonService {
     private LessonProgressMapper lessonProgressMapper;
 
     @Transactional
+    @CacheEvict(cacheNames = "topCourses", allEntries = true)
     public LessonResponseDTO create(LessonCreateRequestDTO dto, Long userId, List<String> roles) {
         Module module = moduleRepository.findById(dto.moduleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Module", dto.moduleId()));
@@ -67,6 +69,7 @@ public class LessonService {
         Lesson lesson = lessonMapper.toEntity(title, description, module, position);
 
         lesson = lessonRepository.save(lesson);
+        module.getCourse().markAsDraft();
 
         log.atInfo().addKeyValue("title", title).addKeyValue("moduleId", lesson.getModule().getId())
                 .addKeyValue("courseId", lesson.getModule().getCourse().getId()).addKeyValue("userId", userId).log("Lesson created");
@@ -137,9 +140,7 @@ public class LessonService {
 
     @Transactional(readOnly = true)
     public Page<LessonResponseDTO> findAllByModule(Long moduleId, int page, int size, Long userId, List<String> roles) {
-        if (page < 0 || size <= 0 || size > 100) {
-            throw new IllegalArgumentException("Pagination must have page >= 0, size > 0, and size <= 100");
-        }
+        validatePagination(page, size);
 
         Module module = moduleRepository.findById(moduleId).orElseThrow(() -> new ResourceNotFoundException("Module", moduleId));
 
@@ -201,6 +202,7 @@ public class LessonService {
 
         if (dto.title() != null) {
             String title = normalizeString(dto.title());
+            validateTitle(title);
             if (!title.equalsIgnoreCase(lesson.getTitle()) && lessonRepository.existsByModuleAndTitleIgnoreCase(lesson.getModule(), title)) {
                 throw new DuplicateResourceException("Lesson", "title", title);
             }
@@ -220,6 +222,7 @@ public class LessonService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "topCourses", allEntries = true)
     public void deleteById (Long id, Long userId, List<String> roles) {
         Lesson lesson = lessonRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
@@ -238,6 +241,7 @@ public class LessonService {
             mediaService.delete(lesson.getPendingVideo().getId());
         }
 
+        lesson.getModule().getCourse().markAsDraft();
         lessonRepository.delete(lesson);
 
         log.atInfo().addKeyValue("lessonId", id).addKeyValue("userId", userId).log("Lesson deleted");
@@ -291,5 +295,17 @@ public class LessonService {
 
     private String normalizeString(String value) {
         return value.trim();
+    }
+
+    private void validateTitle(String title) {
+        if (title == null || title.trim().length() < 3) {
+            throw new IllegalArgumentException("Title must have a non-null value and be equal to or longer than 3 characters");
+        }
+    }
+
+    private void validatePagination(int page, int size) {
+        if (page < 0 || size <= 0 || size > 100) {
+            throw new IllegalArgumentException("Pagination must have page >= 0, size > 0, and size <= 100");
+        }
     }
 }
