@@ -33,16 +33,35 @@ public class CourseController {
         return ResponseEntity.status(201).body(courseService.uploadImage(id, dto, jwt.getClaim("userId"), jwt.getClaim("roles")));
     }
 
-    @GetMapping
+    @GetMapping("/private")
     @Operation(summary = "Lists all courses")
-    public ResponseEntity<Page<CourseResponseDTO>> findAll(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.status(200).body(courseService.findAll(page, size));
+    public ResponseEntity<Page<CourseResponseDTO>> findAll(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(200).body(courseService.findAll(page, size, jwt.getClaim("userId")));
+    }
+
+    @GetMapping("/admin")
+    @Operation(summary = "Lists all courses for admin")
+    public ResponseEntity<Page<CourseResponseDTO>> findAllAdmin(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(200).body(courseService.findAllAdmin(page, size, jwt.getClaim("userId")));
+    }
+
+
+    @GetMapping
+    @Operation(summary = "Lists all public courses")
+    public ResponseEntity<Page<CourseResponseDTO>> findAllPublic(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.status(200).body(courseService.findAllPublic(page, size));
+    }
+
+    @GetMapping(path = "/private/title")
+    @Operation(summary = "Lists all courses containing title")
+    public ResponseEntity<Page<CourseResponseDTO>> findAllByTitle(@RequestParam String title, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(200).body(courseService.findAllByTitle(title, page, size, jwt.getClaim("userId")));
     }
 
     @GetMapping(path = "/title")
-    @Operation(summary = "Lists all courses containing title")
-    public ResponseEntity<Page<CourseResponseDTO>> findAllByTitle(@RequestParam String title, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.status(200).body(courseService.findAllByTitle(title, page, size));
+    @Operation(summary = "Lists all public courses containing title")
+    public ResponseEntity<Page<CourseResponseDTO>> findAllByTitlePublic(@RequestParam String title, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.status(200).body(courseService.findAllByTitlePublic(title, page, size));
     }
 
     @GetMapping(path = "/top-courses")
@@ -53,14 +72,14 @@ public class CourseController {
 
     @GetMapping(path = "/{id}")
     @Operation(summary = "Search for a course by ID")
-    public ResponseEntity<CourseResponseDTO> findById(@PathVariable Long id) {
-        return ResponseEntity.status(200).body(courseService.findById(id));
+    public ResponseEntity<CourseResponseDTO> findById(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(200).body(courseService.findById(id, jwt.getClaim("userId"), jwt.getClaim("roles")));
     }
 
     @GetMapping(path = "/{id}/progress/me")
     @Operation(summary = "Find progress of current user")
     public ResponseEntity<CourseProgressResponseDTO> progressUser(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.status(200).body(courseService.findProgressByUser(id, jwt.getClaim("userId")));
+        return ResponseEntity.status(200).body(courseService.findProgressByUser(id, jwt.getClaim("userId"), jwt.getClaim("roles")));
     }
 
     @PatchMapping(path = "/{id}")
@@ -69,10 +88,16 @@ public class CourseController {
         return ResponseEntity.status(200).body(courseService.update(id, dto, jwt.getClaim("userId"), jwt.getClaim("roles")));
     }
 
+    @PatchMapping(path = "/{id}/publish")
+    @Operation(summary = "Publish courses")
+    public ResponseEntity<CourseResponseDTO> publish(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(200).body(courseService.publish(id, jwt.getClaim("userId"), jwt.getClaim("roles")));
+    }
+
     @PutMapping(path = "/{id}/certificate")
     @Operation(summary = "Generate course certificate")
     public ResponseEntity<CertificateResponseDTO> generateCertificate(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.status(200).body(courseService.createCertificate(id, jwt.getClaim("userId")));
+        return ResponseEntity.status(200).body(courseService.createCertificate(id, jwt.getClaim("userId"), jwt.getClaim("roles")));
     }
 
     @DeleteMapping(path = "/{id}")
