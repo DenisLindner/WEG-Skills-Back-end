@@ -17,9 +17,9 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Service
 public class MinioService {
-    private MinioClient minioClient;
-    private MinioClient publicMinioClient;
-    private MinioProperties minioProperties;
+    private final MinioClient minioClient;
+    private final MinioClient publicMinioClient;
+    private final MinioProperties minioProperties;
 
     public MinioService(
             MinioClient minioClient,
