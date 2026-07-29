@@ -3,6 +3,8 @@ package com.weg.weg_skills.service;
 import com.weg.weg_skills.dto.ReviewCreateRequestDTO;
 import com.weg.weg_skills.dto.ReviewResponseDTO;
 import com.weg.weg_skills.dto.ReviewUpdateRequestDTO;
+import com.weg.weg_skills.enums.CourseStatus;
+import com.weg.weg_skills.enums.UserRole;
 import com.weg.weg_skills.exceptions.ForbiddenException;
 import com.weg.weg_skills.exceptions.ResourceNotFoundException;
 import com.weg.weg_skills.exceptions.ReviewAlreadyExistsException;
@@ -24,6 +26,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Objects;
 
 @Slf4j
@@ -62,13 +65,19 @@ public class ReviewService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ReviewResponseDTO> findAllByCourse(Long courseId, int page, int size) {
+    public Page<ReviewResponseDTO> findAllByCourse(Long courseId, int page, int size, Long userId, List<String> roles) {
         if (page < 0 || size <= 0 || size > 100) {
             throw new IllegalArgumentException("Pagination must have page >= 0, size > 0, and size <= 100");
         }
 
-        if (!courseRepository.existsById(courseId)) {
-            throw new ResourceNotFoundException("Course", courseId);
+        Course course = courseRepository.findById(courseId).orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
+
+        if (course.getCourseStatus() != CourseStatus.PUBLISHED) {
+            if (!course.getInstructor().getId().equals(userId)) {
+                if (!roles.contains(String.valueOf(UserRole.ADMIN))){
+                    throw new ForbiddenException();
+                }
+            }
         }
 
         Pageable pageable = PageRequest.of(
