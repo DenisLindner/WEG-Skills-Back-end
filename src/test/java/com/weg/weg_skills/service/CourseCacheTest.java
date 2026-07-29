@@ -2,6 +2,7 @@ package com.weg.weg_skills.service;
 
 import com.weg.weg_skills.TestData;
 import com.weg.weg_skills.dto.CourseCreateRequestDTO;
+import com.weg.weg_skills.enums.CourseStatus;
 import com.weg.weg_skills.enums.UserRole;
 import com.weg.weg_skills.mapper.CertificateMapper;
 import com.weg.weg_skills.mapper.CourseMapper;
@@ -12,6 +13,8 @@ import com.weg.weg_skills.repository.CertificateRepository;
 import com.weg.weg_skills.repository.CourseRepository;
 import com.weg.weg_skills.repository.EnrollmentRepository;
 import com.weg.weg_skills.repository.LessonProgressRepository;
+import com.weg.weg_skills.repository.LessonRepository;
+import com.weg.weg_skills.repository.ModuleRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +32,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -55,12 +59,12 @@ class CourseCacheTest {
         when(projection.getId()).thenReturn(1L);
         when(projection.getTitle()).thenReturn("Java");
         when(projection.getRating()).thenReturn(9.0);
-        when(courseRepository.findMostEnrollmentsCourses(any(Pageable.class))).thenReturn(List.of(projection));
+        when(courseRepository.findMostEnrollmentsCourses(eq(CourseStatus.PUBLISHED), any(Pageable.class))).thenReturn(List.of(projection));
 
         courseService.findMostEnrollments();
         courseService.findMostEnrollments();
 
-        verify(courseRepository).findMostEnrollmentsCourses(any(Pageable.class));
+        verify(courseRepository).findMostEnrollmentsCourses(eq(CourseStatus.PUBLISHED), any(Pageable.class));
 
         var instructor = TestData.user(1L, UserRole.INSTRUCTOR);
         when(userRepository.findById(1L)).thenReturn(Optional.of(instructor));
@@ -69,7 +73,7 @@ class CourseCacheTest {
         courseService.create(new CourseCreateRequestDTO("Spring", null), 1L);
         courseService.findMostEnrollments();
 
-        verify(courseRepository, times(2)).findMostEnrollmentsCourses(any(Pageable.class));
+        verify(courseRepository, times(2)).findMostEnrollmentsCourses(eq(CourseStatus.PUBLISHED), any(Pageable.class));
     }
 
     @Configuration
@@ -112,15 +116,27 @@ class CourseCacheTest {
         }
 
         @Bean
+        ModuleRepository moduleRepository() {
+            return mock(ModuleRepository.class);
+        }
+
+        @Bean
+        LessonRepository lessonRepository() {
+            return mock(LessonRepository.class);
+        }
+
+        @Bean
         CourseService courseService(
                 CourseRepository courseRepository,
                 MediaService mediaService,
                 UserRepository userRepository,
                 LessonProgressRepository lessonProgressRepository,
                 EnrollmentRepository enrollmentRepository,
-                CertificateRepository certificateRepository
+                CertificateRepository certificateRepository,
+                ModuleRepository moduleRepository,
+                LessonRepository lessonRepository
         ) {
-            return new CourseService(courseRepository, new CourseMapper(), mediaService, userRepository,
+            return new CourseService(moduleRepository, lessonRepository, courseRepository, new CourseMapper(), mediaService, userRepository,
                     lessonProgressRepository, new LessonProgressMapper(), enrollmentRepository,
                     certificateRepository, new CertificateMapper());
         }

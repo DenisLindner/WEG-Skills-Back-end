@@ -101,6 +101,16 @@ public class SecurityConfig {
                         ).hasAnyRole("ADMIN", "INSTRUCTOR")
 
                         .requestMatchers(
+                                HttpMethod.GET,
+                                "/courses/private/**"
+                        ).hasAnyRole("ADMIN", "INSTRUCTOR")
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/courses/admin/**"
+                        ).hasRole("ADMIN")
+
+                        .requestMatchers(
                                 HttpMethod.PATCH,
                                 "/courses/**",
                                 "/modules/**",

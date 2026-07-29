@@ -3,6 +3,7 @@ package com.weg.weg_skills.config;
 import com.weg.weg_skills.config.minio.MinioConfig;
 import com.weg.weg_skills.config.minio.MinioProperties;
 import com.weg.weg_skills.dto.CourseWithRatingResponseDTO;
+import com.weg.weg_skills.enums.CourseStatus;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -44,6 +45,7 @@ class ConfigurationTest {
                 1L,
                 "Java",
                 "Course description",
+                CourseStatus.PUBLISHED,
                 9.5,
                 "http://localhost/image.png"
         ));

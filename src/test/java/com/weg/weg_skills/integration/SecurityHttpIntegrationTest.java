@@ -8,6 +8,7 @@ import com.weg.weg_skills.controller.UserController;
 import com.weg.weg_skills.dto.AuthResponseDTO;
 import com.weg.weg_skills.dto.CourseResponseDTO;
 import com.weg.weg_skills.dto.LessonProgressDetailsResponseDTO;
+import com.weg.weg_skills.enums.CourseStatus;
 import com.weg.weg_skills.service.AuthService;
 import com.weg.weg_skills.service.CourseService;
 import com.weg.weg_skills.service.LessonService;
@@ -32,6 +33,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -92,7 +94,7 @@ class SecurityHttpIntegrationTest {
                 .andExpect(status().isForbidden());
 
         when(courseService.create(any(), eq(1L)))
-                .thenReturn(new CourseResponseDTO(1L, "Java Course", "Description", null));
+                .thenReturn(new CourseResponseDTO(1L, "Java Course", "Description", CourseStatus.DRAFT, null));
         mockMvc.perform(post("/courses")
                         .with(jwt()
                                 .jwt(token -> token.claim("userId", 1L))
@@ -104,13 +106,28 @@ class SecurityHttpIntegrationTest {
 
     @Test
     void shouldAllowStudentToCompleteLesson() throws Exception {
-        when(lessonService.completeLesson(4L, 1L))
+        when(lessonService.completeLesson(4L, 1L, List.of("STUDENT")))
                 .thenReturn(new LessonProgressDetailsResponseDTO(4L, 5L, Instant.now()));
 
         mockMvc.perform(put("/lessons/4/completion")
                         .with(jwt()
-                                .jwt(token -> token.claim("userId", 1L))
+                                .jwt(token -> token.claim("userId", 1L).claim("roles", List.of("STUDENT")))
                                 .authorities(new SimpleGrantedAuthority("ROLE_STUDENT"))))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldAllowOnlyInstructorOrAdminToPublishCourse() throws Exception {
+        mockMvc.perform(patch("/courses/2/publish")
+                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_STUDENT"))))
+                .andExpect(status().isForbidden());
+
+        when(courseService.publish(2L, 1L, List.of("INSTRUCTOR")))
+                .thenReturn(new CourseResponseDTO(2L, "Course", "Description", CourseStatus.PUBLISHED, null));
+        mockMvc.perform(patch("/courses/2/publish")
+                        .with(jwt()
+                                .jwt(token -> token.claim("userId", 1L).claim("roles", List.of("INSTRUCTOR")))
+                                .authorities(new SimpleGrantedAuthority("ROLE_INSTRUCTOR"))))
                 .andExpect(status().isOk());
     }
 

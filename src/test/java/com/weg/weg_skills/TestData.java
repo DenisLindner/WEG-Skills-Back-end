@@ -1,5 +1,6 @@
 package com.weg.weg_skills;
 
+import com.weg.weg_skills.enums.CourseStatus;
 import com.weg.weg_skills.enums.MediaStatus;
 import com.weg.weg_skills.enums.MediaType;
 import com.weg.weg_skills.enums.UserRole;
@@ -21,7 +22,7 @@ public final class TestData {
     }
 
     public static Course course(Long id, User instructor) {
-        Course course = new Course("Java Basics", "Course description", instructor);
+        Course course = new Course("Java Basics", "Course description", instructor, CourseStatus.PUBLISHED);
         course.setId(id);
         return course;
     }

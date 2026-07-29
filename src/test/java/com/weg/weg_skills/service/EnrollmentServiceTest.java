@@ -2,6 +2,7 @@ package com.weg.weg_skills.service;
 
 import com.weg.weg_skills.TestData;
 import com.weg.weg_skills.dto.EnrollmentRequestDTO;
+import com.weg.weg_skills.enums.CourseStatus;
 import com.weg.weg_skills.enums.UserRole;
 import com.weg.weg_skills.exceptions.EnrollmentAlreadyExistsException;
 import com.weg.weg_skills.exceptions.ResourceNotFoundException;
@@ -73,6 +74,16 @@ class EnrollmentServiceTest {
     }
 
     @Test
+    void shouldRejectDraftCourse() {
+        Course course = TestData.course(2L, TestData.user(3L, UserRole.INSTRUCTOR));
+        course.setCourseStatus(CourseStatus.DRAFT);
+        when(courseRepository.findById(2L)).thenReturn(Optional.of(course));
+
+        assertThatThrownBy(() -> service.enrollUser(new EnrollmentRequestDTO(2L), 1L))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
     void shouldListUserEnrollments() {
         User user = TestData.user(1L, UserRole.STUDENT);
         Course course = TestData.course(2L, TestData.user(3L, UserRole.INSTRUCTOR));
@@ -86,7 +97,6 @@ class EnrollmentServiceTest {
 
     @Test
     void shouldValidateMissingResourcesAndPagination() {
-        when(userRepository.findById(99L)).thenReturn(Optional.empty());
         assertThatThrownBy(() -> service.enrollUser(new EnrollmentRequestDTO(2L), 99L))
                 .isInstanceOf(ResourceNotFoundException.class);
         assertThatThrownBy(() -> service.getMeEnrollments(1L, 0, 101))

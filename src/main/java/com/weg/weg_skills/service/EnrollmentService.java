@@ -2,6 +2,7 @@ package com.weg.weg_skills.service;
 
 import com.weg.weg_skills.dto.EnrollmentRequestDTO;
 import com.weg.weg_skills.dto.EnrollmentResponseDTO;
+import com.weg.weg_skills.enums.CourseStatus;
 import com.weg.weg_skills.exceptions.EnrollmentAlreadyExistsException;
 import com.weg.weg_skills.exceptions.ResourceNotFoundException;
 import com.weg.weg_skills.mapper.EnrollmentMapper;
@@ -33,10 +34,15 @@ public class EnrollmentService {
     @Transactional
     @CacheEvict(cacheNames = "topCourses", allEntries = true)
     public EnrollmentResponseDTO enrollUser(EnrollmentRequestDTO dto, Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
         Course course = courseRepository.findById(dto.courseId())
                 .orElseThrow(() -> new ResourceNotFoundException("Course", dto.courseId()));
+
+        if (course.getCourseStatus() != CourseStatus.PUBLISHED) {
+            throw new IllegalStateException("Course is not published");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
         if (enrollmentRepository.existsByUserAndCourse(user, course)) {
             throw new EnrollmentAlreadyExistsException();

@@ -33,8 +33,8 @@ public class LessonController {
 
     @GetMapping(path = "/module/{moduleId}")
     @Operation(summary = "Lists all lessons in a specific module")
-    public ResponseEntity<Page<LessonResponseDTO>> findAllByModule(@PathVariable Long moduleId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.status(200).body(lessonService.findAllByModule(moduleId, page, size));
+    public ResponseEntity<Page<LessonResponseDTO>> findAllByModule(@PathVariable Long moduleId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(200).body(lessonService.findAllByModule(moduleId, page, size, jwt.getClaim("userId"), jwt.getClaim("roles")));
     }
 
     @GetMapping(path = "/{id}")
@@ -65,6 +65,6 @@ public class LessonController {
     @PutMapping(path = "/{id}/completion")
     @Operation(summary = "Complete lesson route")
     public ResponseEntity<LessonProgressDetailsResponseDTO> completeLesson(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.status(200).body(lessonService.completeLesson(id, jwt.getClaim("userId")));
+        return ResponseEntity.status(200).body(lessonService.completeLesson(id, jwt.getClaim("userId"), jwt.getClaim("roles")));
     }
 }

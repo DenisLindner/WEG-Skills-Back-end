@@ -6,6 +6,7 @@ import com.weg.weg_skills.dto.LessonCreateRequestDTO;
 import com.weg.weg_skills.dto.LessonUpdateRequestDTO;
 import com.weg.weg_skills.dto.RepositionRequestDTO;
 import com.weg.weg_skills.dto.UploadTicketResponseDTO;
+import com.weg.weg_skills.enums.CourseStatus;
 import com.weg.weg_skills.enums.MediaStatus;
 import com.weg.weg_skills.enums.MediaType;
 import com.weg.weg_skills.enums.UserRole;
@@ -82,6 +83,7 @@ class LessonServiceTest {
         assertThat(response.id()).isEqualTo(4L);
         assertThat(response.title()).isEqualTo("Lesson");
         assertThat(response.position()).isEqualTo(2L);
+        assertThat(module.getCourse().getCourseStatus()).isEqualTo(CourseStatus.DRAFT);
     }
 
     @Test
@@ -98,7 +100,7 @@ class LessonServiceTest {
             return progress;
         });
 
-        var response = service.completeLesson(4L, 10L);
+        var response = service.completeLesson(4L, 10L, List.of("STUDENT"));
 
         assertThat(response.lessonId()).isEqualTo(4L);
         assertThat(response.enrollmentId()).isEqualTo(5L);
@@ -116,7 +118,7 @@ class LessonServiceTest {
         when(enrollmentRepository.findByCourseIdAndUserId(2L, 10L)).thenReturn(Optional.of(enrollment));
         when(lessonProgressRepository.findByEnrollmentIdAndLessonId(5L, 4L)).thenReturn(progress);
 
-        var response = service.completeLesson(4L, 10L);
+        var response = service.completeLesson(4L, 10L, List.of("STUDENT"));
 
         assertThat(response.completedAt()).isEqualTo(progress.getCompletedAt());
         verify(lessonProgressRepository, never()).save(any());
@@ -159,10 +161,11 @@ class LessonServiceTest {
     @Test
     void shouldListLessonsFromExistingModule() {
         Lesson lesson = TestData.lesson(4L, module());
-        when(moduleRepository.existsById(3L)).thenReturn(true);
+        Module module = lesson.getModule();
+        when(moduleRepository.findById(3L)).thenReturn(Optional.of(module));
         when(lessonRepository.findAllByModuleId(any(), any())).thenReturn(new PageImpl<>(List.of(lesson)));
 
-        assertThat(service.findAllByModule(3L, 0, 10).getContent())
+        assertThat(service.findAllByModule(3L, 0, 10, 1L, List.of("INSTRUCTOR")).getContent())
                 .singleElement().satisfies(item -> assertThat(item.id()).isEqualTo(4L));
     }
 
@@ -207,6 +210,7 @@ class LessonServiceTest {
         service.deleteById(4L, 1L, List.of("INSTRUCTOR"));
         verify(mediaService).delete(5L);
         verify(lessonRepository).delete(lesson);
+        assertThat(lesson.getModule().getCourse().getCourseStatus()).isEqualTo(CourseStatus.DRAFT);
     }
 
     @Test
@@ -215,7 +219,7 @@ class LessonServiceTest {
         assertThatThrownBy(() -> service.findById(4L, 99L, List.of("STUDENT")))
                 .isInstanceOf(ResourceNotFoundException.class);
 
-        assertThatThrownBy(() -> service.findAllByModule(3L, -1, 10))
+        assertThatThrownBy(() -> service.findAllByModule(3L, -1, 10, 99L, List.of("STUDENT")))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

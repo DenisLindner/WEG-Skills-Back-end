@@ -1,6 +1,7 @@
 package com.weg.weg_skills.service;
 
 import com.weg.weg_skills.dto.*;
+import com.weg.weg_skills.enums.CourseStatus;
 import com.weg.weg_skills.enums.UserRole;
 import com.weg.weg_skills.exceptions.DuplicateResourceException;
 import com.weg.weg_skills.exceptions.ForbiddenException;
@@ -14,6 +15,7 @@ import com.weg.weg_skills.repository.ModuleRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -35,6 +37,7 @@ public class ModuleService {
     private UserRepository userRepository;
 
     @Transactional
+    @CacheEvict(cacheNames = "topCourses", allEntries = true)
     public ModuleResponseDTO create(ModuleCreateRequestDTO dto, Long userId, List<String> roles) {
         Course course = courseRepository.findById(dto.courseId()).orElseThrow(() -> new ResourceNotFoundException("Course", dto.courseId()));
 
@@ -63,6 +66,7 @@ public class ModuleService {
         Module module = moduleMapper.toEntity(title, description, course, position);
 
         module = moduleRepository.save(module);
+        course.markAsDraft();
 
         log.atInfo().addKeyValue("title", title).addKeyValue("courseId", module.getCourse().getId()).addKeyValue("userId", userId).log("Module created");
 
@@ -100,13 +104,17 @@ public class ModuleService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ModuleResponseDTO> findAllByCourse(Long courseId, int page, int size) {
-        if (page < 0 || size <= 0 || size > 100) {
-            throw new IllegalArgumentException("Pagination must have page >= 0, size > 0, and size <= 100");
-        }
+    public Page<ModuleResponseDTO> findAllByCourse(Long courseId, int page, int size, Long userId, List<String> roles) {
+        validatePagination(page, size);
 
-        if (!courseRepository.existsById(courseId)) {
-            throw new ResourceNotFoundException("Course", courseId);
+        Course course = courseRepository.findById(courseId).orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
+
+        if (course.getCourseStatus() != CourseStatus.PUBLISHED) {
+            if (!course.getInstructor().getId().equals(userId)) {
+                if (!roles.contains(String.valueOf(UserRole.ADMIN))){
+                    throw new ForbiddenException();
+                }
+            }
         }
 
         Pageable pageable = PageRequest.of(
@@ -120,8 +128,16 @@ public class ModuleService {
     }
 
     @Transactional(readOnly = true)
-    public ModuleResponseDTO findById(Long id) {
+    public ModuleResponseDTO findById(Long id, Long userId, List<String> roles) {
         Module module = moduleRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Module", id));
+
+        if (module.getCourse().getCourseStatus() != CourseStatus.PUBLISHED) {
+            if (!module.getCourse().getInstructor().getId().equals(userId)) {
+                if (!roles.contains(String.valueOf(UserRole.ADMIN))){
+                    throw new ForbiddenException();
+                }
+            }
+        }
 
         return moduleMapper.toResponse(module, module.getImage() != null && module.getImage().isReady() ? mediaService.getPublicUrl(module.getImage()) : null);
     }
@@ -139,6 +155,7 @@ public class ModuleService {
 
         if (dto.title() != null) {
             String title = normalizeString(dto.title());
+            validateTitle(title);
             if (!title.equalsIgnoreCase(module.getTitle()) && moduleRepository.existsByCourseAndTitleIgnoreCase(module.getCourse(), title)) {
                 throw new DuplicateResourceException("Module", "title", dto.title());
             }
@@ -158,6 +175,7 @@ public class ModuleService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "topCourses", allEntries = true)
     public void deleteById (Long id, Long userId, List<String> roles) {
         Module module = moduleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Module", id));
@@ -181,6 +199,7 @@ public class ModuleService {
             if (l.getPendingVideo() != null && !l.getPendingVideo().isDeleted()) mediaService.delete(l.getPendingVideo().getId());
         });
 
+        module.getCourse().markAsDraft();
         moduleRepository.delete(module);
 
         log.atInfo().addKeyValue("moduleId", id).addKeyValue("userId", userId).log("Module deleted");
@@ -234,5 +253,17 @@ public class ModuleService {
 
     private String normalizeString(String value) {
         return value.trim();
+    }
+
+    private void validateTitle(String title) {
+        if (title == null || title.trim().length() < 3) {
+            throw new IllegalArgumentException("Title must have a non-null value and be equal to or longer than 3 characters");
+        }
+    }
+
+    private void validatePagination(int page, int size) {
+        if (page < 0 || size <= 0 || size > 100) {
+            throw new IllegalArgumentException("Pagination must have page >= 0, size > 0, and size <= 100");
+        }
     }
 }

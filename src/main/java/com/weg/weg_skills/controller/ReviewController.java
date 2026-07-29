@@ -29,8 +29,8 @@ public class ReviewController {
 
     @GetMapping(path = "/{courseId}")
     @Operation(summary = "Lists all reviews for a specific course")
-    public ResponseEntity<Page<ReviewResponseDTO>> findAllByCourse(@PathVariable Long courseId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.status(200).body(reviewService.findAllByCourse(courseId, page, size));
+    public ResponseEntity<Page<ReviewResponseDTO>> findAllByCourse(@PathVariable Long courseId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(200).body(reviewService.findAllByCourse(courseId, page, size, jwt.getClaim("userId"), jwt.getClaim("roles")));
     }
 
     @GetMapping(path = "/me")
