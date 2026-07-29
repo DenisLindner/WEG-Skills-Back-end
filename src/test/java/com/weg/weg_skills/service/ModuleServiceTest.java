@@ -112,11 +112,11 @@ class ModuleServiceTest {
         Course course = TestData.course(2L, TestData.user(1L, UserRole.INSTRUCTOR));
         Module module = TestData.module(3L, course);
         module.setImage(TestData.media(4L, course.getInstructor(), MediaType.MODULE_IMAGE, MediaStatus.READY));
-        when(courseRepository.existsById(2L)).thenReturn(true);
+        when(courseRepository.findById(2L)).thenReturn(Optional.of(course));
         when(moduleRepository.findAllByCourseId(any(), any())).thenReturn(new PageImpl<>(List.of(module)));
         when(mediaService.getPublicUrl(module.getImage())).thenReturn("image-url");
 
-        assertThat(service.findAllByCourse(2L, 0, 10).getContent())
+        assertThat(service.findAllByCourse(2L, 0, 10, 1L, List.of("INSTRUCTOR")).getContent())
                 .singleElement().satisfies(item -> assertThat(item.imageUrl()).isEqualTo("image-url"));
     }
 
@@ -126,7 +126,7 @@ class ModuleServiceTest {
                 TestData.course(2L, TestData.user(1L, UserRole.INSTRUCTOR)));
         when(moduleRepository.findById(3L)).thenReturn(Optional.of(module));
 
-        assertThat(service.findById(3L).id()).isEqualTo(3L);
+        assertThat(service.findById(3L, 1L, List.of("INSTRUCTOR")).id()).isEqualTo(3L);
     }
 
     @Test
@@ -161,9 +161,9 @@ class ModuleServiceTest {
 
     @Test
     void shouldFailWhenCourseDoesNotExistDuringList() {
-        when(courseRepository.existsById(99L)).thenReturn(false);
+        when(courseRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.findAllByCourse(99L, 0, 10))
+        assertThatThrownBy(() -> service.findAllByCourse(99L, 0, 10, 1L, List.of("INSTRUCTOR")))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
