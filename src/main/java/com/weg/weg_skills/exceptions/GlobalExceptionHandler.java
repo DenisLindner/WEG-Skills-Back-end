@@ -16,6 +16,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -26,8 +28,17 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ProblemDetail methodArgument(HttpServletRequest request) {
-        return createProblemDetail(HttpStatus.BAD_REQUEST, "Bad Request", "Method argument not valid", "bad-request", request.getRequestURI());
+    public ProblemDetail methodArgument(MethodArgumentNotValidException ex, HttpServletRequest request) {
+        ProblemDetail problemDetail = createProblemDetail(HttpStatus.BAD_REQUEST, "Bad Request", "Method argument not valid", "bad-request", request.getRequestURI());
+        Map<String, String> errors = new LinkedHashMap<>();
+
+        ex.getBindingResult().getFieldErrors().forEach(error ->
+                errors.putIfAbsent(error.getField(), error.getDefaultMessage())
+        );
+
+        problemDetail.setProperty("errors", errors);
+
+        return problemDetail;
     }
 
     @ExceptionHandler({InvalidCredentialsException.class, UnauthorizedException.class})
