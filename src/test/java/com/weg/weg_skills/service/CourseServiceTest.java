@@ -5,6 +5,7 @@ import com.weg.weg_skills.dto.CourseCreateRequestDTO;
 import com.weg.weg_skills.dto.CourseUpdateRequestDTO;
 import com.weg.weg_skills.dto.CreateMediaUploadRequestDTO;
 import com.weg.weg_skills.dto.UploadTicketResponseDTO;
+import com.weg.weg_skills.enums.CourseStatus;
 import com.weg.weg_skills.enums.MediaStatus;
 import com.weg.weg_skills.enums.MediaType;
 import com.weg.weg_skills.enums.UserRole;
@@ -28,6 +29,8 @@ import com.weg.weg_skills.repository.CertificateRepository;
 import com.weg.weg_skills.repository.CourseRepository;
 import com.weg.weg_skills.repository.EnrollmentRepository;
 import com.weg.weg_skills.repository.LessonProgressRepository;
+import com.weg.weg_skills.repository.LessonRepository;
+import com.weg.weg_skills.repository.ModuleRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -63,6 +66,8 @@ class CourseServiceTest {
     @Mock LessonProgressRepository lessonProgressRepository;
     @Mock EnrollmentRepository enrollmentRepository;
     @Mock CertificateRepository certificateRepository;
+    @Mock ModuleRepository moduleRepository;
+    @Mock LessonRepository lessonRepository;
     @Mock CourseWithRatingProjection courseProjection;
     @Mock ProgressProjection progressProjection;
 
@@ -70,7 +75,7 @@ class CourseServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new CourseService(courseRepository, new CourseMapper(), mediaService, userRepository,
+        service = new CourseService(moduleRepository, lessonRepository, courseRepository, new CourseMapper(), mediaService, userRepository,
                 lessonProgressRepository, new LessonProgressMapper(), enrollmentRepository,
                 certificateRepository, new CertificateMapper());
     }
@@ -90,6 +95,7 @@ class CourseServiceTest {
         assertThat(response.id()).isEqualTo(10L);
         assertThat(response.title()).isEqualTo("Java Basics");
         assertThat(response.description()).isEqualTo("Description");
+        assertThat(response.status()).isEqualTo(CourseStatus.DRAFT);
     }
 
     @Test
@@ -132,29 +138,31 @@ class CourseServiceTest {
         Course course = TestData.course(2L, instructor);
         Media image = TestData.media(3L, instructor, MediaType.COURSE_IMAGE, MediaStatus.READY);
         course.setImage(image);
-        when(courseRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(course)));
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(courseRepository.findAllByInstructorId(eq(1L), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(course)));
         when(mediaService.getPublicUrl(image)).thenReturn("image-url");
 
-        var response = service.findAll(0, 10);
+        var response = service.findAll(0, 10, 1L);
 
         assertThat(response.getContent()).singleElement().satisfies(item ->
                 assertThat(item.imageUrl()).isEqualTo("image-url"));
         ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
-        verify(courseRepository).findAll(captor.capture());
+        verify(courseRepository).findAllByInstructorId(eq(1L), captor.capture());
         assertThat(Objects.requireNonNull(captor.getValue().getSort().getOrderFor("createdAt")).isDescending()).isTrue();
     }
 
     @Test
     void shouldFindCoursesContainingNormalizedTitle() {
         Course course = TestData.course(2L, TestData.user(1L, UserRole.INSTRUCTOR));
-        when(courseRepository.findAllByTitleContainingIgnoreCase(any(), any(Pageable.class)))
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(courseRepository.findAllByInstructorIdAndTitleContainingIgnoreCase(eq(1L), any(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(course)));
 
-        var response = service.findAllByTitle(" Java ", 0, 10);
+        var response = service.findAllByTitle(" Java ", 0, 10, 1L);
 
         assertThat(response.getContent()).singleElement().satisfies(item ->
                 assertThat(item.title()).isEqualTo("Java Basics"));
-        verify(courseRepository).findAllByTitleContainingIgnoreCase(eq("Java"), any(Pageable.class));
+        verify(courseRepository).findAllByInstructorIdAndTitleContainingIgnoreCase(eq(1L), eq("Java"), any(Pageable.class));
     }
 
     @Test
@@ -162,8 +170,9 @@ class CourseServiceTest {
         when(courseProjection.getId()).thenReturn(2L);
         when(courseProjection.getTitle()).thenReturn("Java Basics");
         when(courseProjection.getDescription()).thenReturn("Course description");
+        when(courseProjection.getCourseStatus()).thenReturn(CourseStatus.PUBLISHED);
         when(courseProjection.getRating()).thenReturn(9.0);
-        when(courseRepository.findMostEnrollmentsCourses(any(Pageable.class)))
+        when(courseRepository.findMostEnrollmentsCourses(eq(CourseStatus.PUBLISHED), any(Pageable.class)))
                 .thenReturn(List.of(courseProjection));
 
         var response = service.findMostEnrollments();
@@ -173,7 +182,7 @@ class CourseServiceTest {
             assertThat(item.rating()).isEqualTo(9.0);
         });
         ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
-        verify(courseRepository).findMostEnrollmentsCourses(captor.capture());
+        verify(courseRepository).findMostEnrollmentsCourses(eq(CourseStatus.PUBLISHED), captor.capture());
         assertThat(captor.getValue().getPageSize()).isEqualTo(3);
     }
 
@@ -182,7 +191,7 @@ class CourseServiceTest {
         Course course = TestData.course(2L, TestData.user(1L, UserRole.INSTRUCTOR));
         when(courseRepository.findById(2L)).thenReturn(Optional.of(course));
 
-        assertThat(service.findById(2L).id()).isEqualTo(2L);
+        assertThat(service.findById(2L, 5L, List.of("STUDENT")).id()).isEqualTo(2L);
     }
 
     @Test
@@ -197,7 +206,7 @@ class CourseServiceTest {
         lessonProgress.setCompletedAt(Instant.now());
 
         when(userRepository.existsById(1L)).thenReturn(true);
-        when(courseRepository.existsById(2L)).thenReturn(true);
+        when(courseRepository.findById(2L)).thenReturn(Optional.of(course));
         when(enrollmentRepository.existsByCourseIdAndUserId(2L, 1L)).thenReturn(true);
         when(courseRepository.findProgressByUserId(1L, 2L)).thenReturn(Optional.of(progressProjection));
         when(progressProjection.getCourseId()).thenReturn(2L);
@@ -207,7 +216,7 @@ class CourseServiceTest {
         when(lessonProgressRepository.findAllByEnrollmentUserIdAndLessonModuleCourseId(1L, 2L))
                 .thenReturn(List.of(lessonProgress));
 
-        var response = service.findProgressByUser(2L, 1L);
+        var response = service.findProgressByUser(2L, 1L, List.of("STUDENT"));
 
         assertThat(response.percentage()).isEqualTo(50.0);
         assertThat(response.lessons()).singleElement().satisfies(item ->
@@ -230,7 +239,7 @@ class CourseServiceTest {
             return certificate;
         });
 
-        var response = service.createCertificate(2L, 1L);
+        var response = service.createCertificate(2L, 1L, List.of("STUDENT"));
 
         assertThat(response.studentName()).isEqualTo("Test User");
         assertThat(response.courseTitle()).isEqualTo("Java Basics");
@@ -250,7 +259,7 @@ class CourseServiceTest {
         when(enrollmentRepository.existsByCourseIdAndUserId(2L, 1L)).thenReturn(true);
         when(certificateRepository.findByCourseIdAndUserId(2L, 1L)).thenReturn(certificate);
 
-        var response = service.createCertificate(2L, 1L);
+        var response = service.createCertificate(2L, 1L, List.of("STUDENT"));
 
         assertThat(response.code()).isEqualTo("existing-code");
         verify(certificateRepository, never()).save(any(Certificate.class));
@@ -266,20 +275,20 @@ class CourseServiceTest {
         when(courseRepository.findProgressByUserId(1L, 2L)).thenReturn(Optional.of(progressProjection));
         when(progressProjection.getTotalLessons()).thenReturn(0L);
 
-        assertThatThrownBy(() -> service.createCertificate(2L, 1L))
+        assertThatThrownBy(() -> service.createCertificate(2L, 1L, List.of("STUDENT")))
                 .isInstanceOf(IllegalStateException.class);
 
         when(progressProjection.getTotalLessons()).thenReturn(2L);
         when(progressProjection.getCompletedLessons()).thenReturn(1L);
 
-        assertThatThrownBy(() -> service.createCertificate(2L, 1L))
+        assertThatThrownBy(() -> service.createCertificate(2L, 1L, List.of("STUDENT")))
                 .isInstanceOf(IllegalStateException.class);
     }
 
     @ParameterizedTest
     @CsvSource({"-1,10", "0,0", "0,101"})
     void shouldRejectInvalidPagination(int page, int size) {
-        assertThatThrownBy(() -> service.findAll(page, size)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.findAll(page, size, 1L)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -330,7 +339,46 @@ class CourseServiceTest {
     void shouldFailWhenCourseDoesNotExist() {
         when(courseRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.findById(99L)).isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> service.findById(99L, 1L, List.of("INSTRUCTOR"))).isInstanceOf(ResourceNotFoundException.class);
         verify(mediaService, never()).getPublicUrl(any(Media.class));
+    }
+
+    @Test
+    void shouldPublishCompleteCourse() {
+        User instructor = TestData.user(1L, UserRole.INSTRUCTOR);
+        Course course = TestData.course(2L, instructor);
+        course.setCourseStatus(CourseStatus.DRAFT);
+        course.setImage(TestData.media(3L, instructor, MediaType.COURSE_IMAGE, MediaStatus.READY));
+        when(courseRepository.findById(2L)).thenReturn(Optional.of(course));
+        when(moduleRepository.countByCourseId(2L)).thenReturn(1L);
+        when(lessonRepository.countByModuleCourseId(2L)).thenReturn(2L);
+        when(lessonRepository.countByModuleCourseIdAndVideoIsNotNull(2L)).thenReturn(2L);
+        when(courseRepository.save(course)).thenReturn(course);
+
+        var response = service.publish(2L, 1L, List.of("INSTRUCTOR"));
+
+        assertThat(response.status()).isEqualTo(CourseStatus.PUBLISHED);
+        verify(courseRepository).save(course);
+    }
+
+    @Test
+    void shouldRejectPublishingIncompleteCourse() {
+        Course course = TestData.course(2L, TestData.user(1L, UserRole.INSTRUCTOR));
+        course.setCourseStatus(CourseStatus.DRAFT);
+        when(courseRepository.findById(2L)).thenReturn(Optional.of(course));
+
+        assertThatThrownBy(() -> service.publish(2L, 1L, List.of("INSTRUCTOR")))
+                .isInstanceOf(IllegalStateException.class);
+        verify(courseRepository, never()).save(course);
+    }
+
+    @Test
+    void shouldHideDraftFromAnotherUser() {
+        Course course = TestData.course(2L, TestData.user(1L, UserRole.INSTRUCTOR));
+        course.setCourseStatus(CourseStatus.DRAFT);
+        when(courseRepository.findById(2L)).thenReturn(Optional.of(course));
+
+        assertThatThrownBy(() -> service.findById(2L, 9L, List.of("STUDENT")))
+                .isInstanceOf(ForbiddenException.class);
     }
 }
