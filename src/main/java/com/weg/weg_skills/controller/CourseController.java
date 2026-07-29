@@ -47,9 +47,9 @@ public class CourseController {
 
 
     @GetMapping
-    @Operation(summary = "Lists all public courses")
-    public ResponseEntity<Page<CourseResponseDTO>> findAllPublic(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.status(200).body(courseService.findAllPublic(page, size));
+    @Operation(summary = "Lists all published courses")
+    public ResponseEntity<Page<CourseResponseDTO>> findAllPublished(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.status(200).body(courseService.findAllPublished(page, size));
     }
 
     @GetMapping(path = "/private/title")
@@ -59,9 +59,9 @@ public class CourseController {
     }
 
     @GetMapping(path = "/title")
-    @Operation(summary = "Lists all public courses containing title")
-    public ResponseEntity<Page<CourseResponseDTO>> findAllByTitlePublic(@RequestParam String title, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.status(200).body(courseService.findAllByTitlePublic(title, page, size));
+    @Operation(summary = "Lists all published courses containing title")
+    public ResponseEntity<Page<CourseResponseDTO>> findAllByTitlePublished(@RequestParam String title, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.status(200).body(courseService.findAllByTitlePublished(title, page, size));
     }
 
     @GetMapping(path = "/top-courses")
