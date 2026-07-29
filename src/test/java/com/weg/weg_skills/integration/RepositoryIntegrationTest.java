@@ -1,5 +1,6 @@
 package com.weg.weg_skills.integration;
 
+import com.weg.weg_skills.enums.CourseStatus;
 import com.weg.weg_skills.enums.UserRole;
 import com.weg.weg_skills.enums.MediaStatus;
 import com.weg.weg_skills.enums.MediaType;
@@ -54,7 +55,7 @@ class RepositoryIntegrationTest {
                 "Instructor", "instructor@example.com", "password", UserRole.INSTRUCTOR));
         User student = userRepository.save(new User(
                 "Student", "student@example.com", "password", UserRole.STUDENT));
-        Course course = courseRepository.save(new Course("Java", "Description", instructor));
+        Course course = courseRepository.save(new Course("Java", "Description", instructor, CourseStatus.PUBLISHED));
         Module module = moduleRepository.save(new Module("Basics", "Description", course, 1L));
         Lesson lesson = lessonRepository.save(new Lesson("Introduction", "Description", module, 1L));
         Enrollment enrollment = enrollmentRepository.save(new Enrollment(student, course));
@@ -67,7 +68,7 @@ class RepositoryIntegrationTest {
         assertThat(userRepository.existsByEmailIgnoreCase("INSTRUCTOR@EXAMPLE.COM")).isTrue();
         assertThat(userRepository.findByEmailIgnoreCase("STUDENT@EXAMPLE.COM")).contains(student);
         assertThat(courseRepository.existsByTitleIgnoreCase("java")).isTrue();
-        assertThat(courseRepository.findAllByTitleContainingIgnoreCase("jav", PageRequest.of(0, 10)))
+        assertThat(courseRepository.findAllByTitleContainingIgnoreCaseAndCourseStatus("jav", CourseStatus.PUBLISHED, PageRequest.of(0, 10)))
                 .contains(course);
         assertThat(moduleRepository.existsByCourseAndTitleIgnoreCase(course, "BASICS")).isTrue();
         assertThat(lessonRepository.existsByModuleAndTitleIgnoreCase(module, "INTRODUCTION")).isTrue();
@@ -94,7 +95,7 @@ class RepositoryIntegrationTest {
         assertThat(reviewRepository.findAllByUserId(student.getId(), PageRequest.of(0, 10))).contains(review);
         assertThat(mediaRepository.findByCreatedAtBeforeAndMediaStatus(
                 Instant.now().plusSeconds(1), MediaStatus.PENDING_UPLOAD)).contains(media);
-        assertThat(courseRepository.findMostEnrollmentsCourses(PageRequest.of(0, 3)))
+        assertThat(courseRepository.findMostEnrollmentsCourses(CourseStatus.PUBLISHED, PageRequest.of(0, 3)))
                 .singleElement()
                 .satisfies(item -> {
                     assertThat(item.getTitle()).isEqualTo("Java");
