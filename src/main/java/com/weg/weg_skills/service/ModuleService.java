@@ -1,6 +1,7 @@
 package com.weg.weg_skills.service;
 
 import com.weg.weg_skills.dto.*;
+import com.weg.weg_skills.enums.CourseStatus;
 import com.weg.weg_skills.enums.UserRole;
 import com.weg.weg_skills.exceptions.DuplicateResourceException;
 import com.weg.weg_skills.exceptions.ForbiddenException;
@@ -100,13 +101,17 @@ public class ModuleService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ModuleResponseDTO> findAllByCourse(Long courseId, int page, int size) {
-        if (page < 0 || size <= 0 || size > 100) {
-            throw new IllegalArgumentException("Pagination must have page >= 0, size > 0, and size <= 100");
-        }
+    public Page<ModuleResponseDTO> findAllByCourse(Long courseId, int page, int size, Long userId, List<String> roles) {
+        validatePagination(page, size);
 
-        if (!courseRepository.existsById(courseId)) {
-            throw new ResourceNotFoundException("Course", courseId);
+        Course course = courseRepository.findById(courseId).orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
+
+        if (course.getCourseStatus() != CourseStatus.PUBLISHED) {
+            if (!course.getInstructor().getId().equals(userId)) {
+                if (!roles.contains(String.valueOf(UserRole.ADMIN))){
+                    throw new ForbiddenException();
+                }
+            }
         }
 
         Pageable pageable = PageRequest.of(
@@ -120,8 +125,16 @@ public class ModuleService {
     }
 
     @Transactional(readOnly = true)
-    public ModuleResponseDTO findById(Long id) {
+    public ModuleResponseDTO findById(Long id, Long userId, List<String> roles) {
         Module module = moduleRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Module", id));
+
+        if (module.getCourse().getCourseStatus() != CourseStatus.PUBLISHED) {
+            if (!module.getCourse().getInstructor().getId().equals(userId)) {
+                if (!roles.contains(String.valueOf(UserRole.ADMIN))){
+                    throw new ForbiddenException();
+                }
+            }
+        }
 
         return moduleMapper.toResponse(module, module.getImage() != null && module.getImage().isReady() ? mediaService.getPublicUrl(module.getImage()) : null);
     }
@@ -234,5 +247,11 @@ public class ModuleService {
 
     private String normalizeString(String value) {
         return value.trim();
+    }
+
+    private void validatePagination(int page, int size) {
+        if (page < 0 || size <= 0 || size > 100) {
+            throw new IllegalArgumentException("Pagination must have page >= 0, size > 0, and size <= 100");
+        }
     }
 }
