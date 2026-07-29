@@ -1,6 +1,7 @@
 package com.weg.weg_skills.service;
 
 import com.weg.weg_skills.dto.*;
+import com.weg.weg_skills.enums.CourseStatus;
 import com.weg.weg_skills.enums.UserRole;
 import com.weg.weg_skills.exceptions.DuplicateResourceException;
 import com.weg.weg_skills.exceptions.EnrollmentNotFoundException;
@@ -74,12 +75,21 @@ public class LessonService {
     }
 
     @Transactional
-    public LessonProgressDetailsResponseDTO completeLesson(Long lessonId, Long userId) {
+    public LessonProgressDetailsResponseDTO completeLesson(Long lessonId, Long userId, List<String> roles) {
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User", userId);
         }
 
         Lesson lesson = lessonRepository.findById(lessonId).orElseThrow(() -> new ResourceNotFoundException("Lesson", lessonId));
+
+        if (lesson.getModule().getCourse().getCourseStatus() != CourseStatus.PUBLISHED) {
+            if (!lesson.getModule().getCourse().getInstructor().getId().equals(userId)) {
+                if (!roles.contains(String.valueOf(UserRole.ADMIN))){
+                    throw new ForbiddenException();
+                }
+            }
+        }
+
         Enrollment enrollment = enrollmentRepository.findByCourseIdAndUserId(lesson.getModule().getCourse().getId(), userId).orElseThrow(() -> new EnrollmentNotFoundException(lesson.getModule().getCourse().getId(), userId));
 
         LessonProgress lessonProgress = lessonProgressRepository.findByEnrollmentIdAndLessonId(enrollment.getId(), lesson.getId());
@@ -126,13 +136,19 @@ public class LessonService {
     }
 
     @Transactional(readOnly = true)
-    public Page<LessonResponseDTO> findAllByModule(Long moduleId, int page, int size) {
+    public Page<LessonResponseDTO> findAllByModule(Long moduleId, int page, int size, Long userId, List<String> roles) {
         if (page < 0 || size <= 0 || size > 100) {
             throw new IllegalArgumentException("Pagination must have page >= 0, size > 0, and size <= 100");
         }
 
-        if (!moduleRepository.existsById(moduleId)) {
-            throw new ResourceNotFoundException("Module", moduleId);
+        Module module = moduleRepository.findById(moduleId).orElseThrow(() -> new ResourceNotFoundException("Module", moduleId));
+
+        if (module.getCourse().getCourseStatus() != CourseStatus.PUBLISHED) {
+            if (!module.getCourse().getInstructor().getId().equals(userId)) {
+                if (!roles.contains(String.valueOf(UserRole.ADMIN))){
+                    throw new ForbiddenException();
+                }
+            }
         }
 
         Pageable pageable = PageRequest.of(
@@ -152,6 +168,14 @@ public class LessonService {
         }
 
         Lesson lesson = lessonRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
+
+        if (lesson.getModule().getCourse().getCourseStatus() != CourseStatus.PUBLISHED) {
+            if (!lesson.getModule().getCourse().getInstructor().getId().equals(userId)) {
+                if (!roles.contains(String.valueOf(UserRole.ADMIN))){
+                    throw new ForbiddenException();
+                }
+            }
+        }
 
         if (!enrollmentRepository.existsByUserIdAndCourse(userId, lesson.getModule().getCourse())) {
             if (!lesson.getModule().getCourse().getInstructor().getId().equals(userId)) {
