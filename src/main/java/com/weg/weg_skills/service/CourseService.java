@@ -139,7 +139,7 @@ public class CourseService {
     }
 
     @Transactional(readOnly = true)
-    public Page<CourseResponseDTO> findAllPublic(int page, int size) {
+    public Page<CourseResponseDTO> findAllPublished(int page, int size) {
         validatePagination(page, size);
 
         Pageable pageable = PageRequest.of(
@@ -177,7 +177,7 @@ public class CourseService {
     }
 
     @Transactional(readOnly = true)
-    public Page<CourseResponseDTO> findAllByTitlePublic(String title, int page, int size) {
+    public Page<CourseResponseDTO> findAllByTitlePublished(String title, int page, int size) {
         validateTitle(title);
 
         validatePagination(page, size);
@@ -264,6 +264,7 @@ public class CourseService {
 
         if (dto.title() != null) {
             String title = normalizeString(dto.title());
+            validateTitle(title);
             if (!title.equalsIgnoreCase(course.getTitle()) && courseRepository.existsByTitleIgnoreCase(title)) {
                 throw new DuplicateResourceException("Course", "title", title);
             }
