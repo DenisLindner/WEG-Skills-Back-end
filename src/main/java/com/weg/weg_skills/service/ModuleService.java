@@ -15,6 +15,7 @@ import com.weg.weg_skills.repository.ModuleRepository;
 import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +37,7 @@ public class ModuleService {
     private UserRepository userRepository;
 
     @Transactional
+    @CacheEvict(cacheNames = "topCourses", allEntries = true)
     public ModuleResponseDTO create(ModuleCreateRequestDTO dto, Long userId, List<String> roles) {
         Course course = courseRepository.findById(dto.courseId()).orElseThrow(() -> new ResourceNotFoundException("Course", dto.courseId()));
 
@@ -64,6 +66,7 @@ public class ModuleService {
         Module module = moduleMapper.toEntity(title, description, course, position);
 
         module = moduleRepository.save(module);
+        course.markAsDraft();
 
         log.atInfo().addKeyValue("title", title).addKeyValue("courseId", module.getCourse().getId()).addKeyValue("userId", userId).log("Module created");
 
@@ -152,6 +155,7 @@ public class ModuleService {
 
         if (dto.title() != null) {
             String title = normalizeString(dto.title());
+            validateTitle(title);
             if (!title.equalsIgnoreCase(module.getTitle()) && moduleRepository.existsByCourseAndTitleIgnoreCase(module.getCourse(), title)) {
                 throw new DuplicateResourceException("Module", "title", dto.title());
             }
@@ -171,6 +175,7 @@ public class ModuleService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "topCourses", allEntries = true)
     public void deleteById (Long id, Long userId, List<String> roles) {
         Module module = moduleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Module", id));
@@ -194,6 +199,7 @@ public class ModuleService {
             if (l.getPendingVideo() != null && !l.getPendingVideo().isDeleted()) mediaService.delete(l.getPendingVideo().getId());
         });
 
+        module.getCourse().markAsDraft();
         moduleRepository.delete(module);
 
         log.atInfo().addKeyValue("moduleId", id).addKeyValue("userId", userId).log("Module deleted");
@@ -247,6 +253,12 @@ public class ModuleService {
 
     private String normalizeString(String value) {
         return value.trim();
+    }
+
+    private void validateTitle(String title) {
+        if (title == null || title.trim().length() < 3) {
+            throw new IllegalArgumentException("Title must have a non-null value and be equal to or longer than 3 characters");
+        }
     }
 
     private void validatePagination(int page, int size) {
