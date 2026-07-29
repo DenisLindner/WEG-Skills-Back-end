@@ -4,10 +4,13 @@ import com.weg.weg_skills.config.minio.MinioConfig;
 import com.weg.weg_skills.config.minio.MinioProperties;
 import com.weg.weg_skills.dto.CourseWithRatingResponseDTO;
 import com.weg.weg_skills.enums.CourseStatus;
+import io.minio.GetPresignedObjectUrlArgs;
+import io.minio.Http;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -23,7 +26,7 @@ class ConfigurationTest {
     }
 
     @Test
-    void shouldCreateMinioClient() throws Exception {
+    void shouldCreateMinioClients() throws Exception {
         MinioProperties properties = new MinioProperties(
                 "http://localhost:9000",
                 "http://localhost:9000",
@@ -35,6 +38,19 @@ class ConfigurationTest {
 
         try (var client = new MinioConfig().minioClient(properties)) {
             assertThat(client).isNotNull();
+        }
+
+        try (var client = new MinioConfig().publicMinioClient(properties)) {
+            String url = client.getPresignedObjectUrl(
+                    GetPresignedObjectUrlArgs.builder()
+                            .method(Http.Method.GET)
+                            .bucket("private")
+                            .object("video.mp4")
+                            .expiry(5, TimeUnit.MINUTES)
+                            .build()
+            );
+
+            assertThat(url).startsWith("http://localhost:9000/private/video.mp4?");
         }
     }
 

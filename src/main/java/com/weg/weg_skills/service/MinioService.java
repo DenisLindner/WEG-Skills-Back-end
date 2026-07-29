@@ -4,8 +4,8 @@ import com.weg.weg_skills.config.minio.MinioProperties;
 import com.weg.weg_skills.dto.MinioUploadTicketDTO;
 import com.weg.weg_skills.exceptions.StorageServiceException;
 import io.minio.*;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.time.ZoneOffset;
@@ -16,10 +16,20 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
-@AllArgsConstructor
 public class MinioService {
-    private MinioClient minioClient;
-    private MinioProperties minioProperties;
+    private final MinioClient minioClient;
+    private final MinioClient publicMinioClient;
+    private final MinioProperties minioProperties;
+
+    public MinioService(
+            MinioClient minioClient,
+            @Qualifier("publicMinioClient") MinioClient publicMinioClient,
+            MinioProperties minioProperties
+    ) {
+        this.minioClient = minioClient;
+        this.publicMinioClient = publicMinioClient;
+        this.minioProperties = minioProperties;
+    }
 
     public MinioUploadTicketDTO createUploadTicket(
             String bucket,
@@ -80,7 +90,7 @@ public class MinioService {
         try {
             long expirationSeconds = minioProperties.playbackExpiration().toSeconds();
 
-            return minioClient.getPresignedObjectUrl(
+            return publicMinioClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .method(Http.Method.GET)
                             .bucket(bucket)

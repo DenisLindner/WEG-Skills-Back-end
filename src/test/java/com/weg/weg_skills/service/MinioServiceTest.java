@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 class MinioServiceTest {
 
     @Mock MinioClient minioClient;
+    @Mock MinioClient publicMinioClient;
 
     private MinioService service;
 
@@ -42,7 +43,7 @@ class MinioServiceTest {
                 Duration.ofMinutes(15),
                 Duration.ofMinutes(5)
         );
-        service = new MinioService(minioClient, properties);
+        service = new MinioService(minioClient, publicMinioClient, properties);
     }
 
     @Test
@@ -65,7 +66,7 @@ class MinioServiceTest {
     void shouldReadMetadataAndCreateUrls() throws Exception {
         StatObjectResponse metadata = org.mockito.Mockito.mock(StatObjectResponse.class);
         when(minioClient.statObject(any(StatObjectArgs.class))).thenReturn(metadata);
-        when(minioClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class))).thenReturn("signed-url");
+        when(publicMinioClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class))).thenReturn("signed-url");
 
         assertThat(service.getObjectMetadata("private", "video.mp4")).isSameAs(metadata);
         assertThat(service.createPrivateReadUrl("private", "video.mp4")).isEqualTo("signed-url");
@@ -84,7 +85,7 @@ class MinioServiceTest {
     void shouldWrapStorageFailures() throws Exception {
         when(minioClient.getPresignedPostFormData(any(PostPolicy.class))).thenThrow(new RuntimeException("down"));
         when(minioClient.statObject(any(StatObjectArgs.class))).thenThrow(new RuntimeException("down"));
-        when(minioClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class))).thenThrow(new RuntimeException("down"));
+        when(publicMinioClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class))).thenThrow(new RuntimeException("down"));
         doThrow(new RuntimeException("down")).when(minioClient).removeObject(any(RemoveObjectArgs.class));
 
         assertThatThrownBy(() -> service.createUploadTicket("public", "key", "image/png", 10))
