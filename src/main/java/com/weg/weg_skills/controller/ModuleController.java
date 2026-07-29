@@ -33,14 +33,14 @@ public class ModuleController {
 
     @GetMapping(path = "/course/{courseId}")
     @Operation(summary = "Lists all modules of a specific course")
-    public ResponseEntity<Page<ModuleResponseDTO>> findAllByCourse(@PathVariable Long courseId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.status(200).body(moduleService.findAllByCourse(courseId, page, size));
+    public ResponseEntity<Page<ModuleResponseDTO>> findAllByCourse(@PathVariable Long courseId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(200).body(moduleService.findAllByCourse(courseId, page, size, jwt.getClaim("userId"), jwt.getClaim("roles")));
     }
 
     @GetMapping(path = "/{id}")
     @Operation(summary = "Searches for a module by ID")
-    public ResponseEntity<ModuleResponseDTO> findById(@PathVariable Long id) {
-        return ResponseEntity.status(200).body(moduleService.findById(id));
+    public ResponseEntity<ModuleResponseDTO> findById(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(200).body(moduleService.findById(id, jwt.getClaim("userId"), jwt.getClaim("roles")));
     }
 
     @PatchMapping(path = "/{id}")
