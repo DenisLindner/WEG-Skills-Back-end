@@ -1,6 +1,7 @@
 package com.weg.weg_skills.service;
 
 import com.weg.weg_skills.dto.*;
+import com.weg.weg_skills.enums.CourseStatus;
 import com.weg.weg_skills.enums.UserRole;
 import com.weg.weg_skills.exceptions.DuplicateResourceException;
 import com.weg.weg_skills.exceptions.EnrollmentNotFoundException;
@@ -31,6 +32,8 @@ import java.util.UUID;
 @Service
 @AllArgsConstructor
 public class CourseService {
+    private final ModuleRepository moduleRepository;
+    private final LessonRepository lessonRepository;
     private CourseRepository courseRepository;
     private CourseMapper courseMapper;
     private MediaService mediaService;
@@ -96,9 +99,31 @@ public class CourseService {
     }
 
     @Transactional(readOnly = true)
-    public Page<CourseResponseDTO> findAll(int page, int size) {
-        if (page < 0 || size <= 0 || size > 100) {
-            throw new IllegalArgumentException("Pagination must have page >= 0, size > 0, and size <= 100");
+    public Page<CourseResponseDTO> findAll(int page, int size, Long userId) {
+        validatePagination(page, size);
+
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("User", userId);
+        }
+
+        Pageable pageable = PageRequest.of(
+                page, size,
+                Sort.by("createdAt").descending()
+        );
+
+        Page<Course> courses = courseRepository.findAllByInstructorId(userId, pageable);
+
+        return courses.map(c ->
+            courseMapper.toResponse(c, c.getImage() != null && c.getImage().isReady() ? mediaService.getPublicUrl(c.getImage()) : null)
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<CourseResponseDTO> findAllAdmin(int page, int size, Long userId) {
+        validatePagination(page, size);
+
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("User", userId);
         }
 
         Pageable pageable = PageRequest.of(
@@ -114,13 +139,29 @@ public class CourseService {
     }
 
     @Transactional(readOnly = true)
-    public Page<CourseResponseDTO> findAllByTitle(String title, int page, int size) {
-        if (title == null || title.trim().length() < 3) {
-            throw new IllegalArgumentException("Title must have a non-null value and be equal to or longer than 3 characters");
-        }
+    public Page<CourseResponseDTO> findAllPublic(int page, int size) {
+        validatePagination(page, size);
 
-        if (page < 0 || size <= 0 || size > 100) {
-            throw new IllegalArgumentException("Pagination must have page >= 0, size > 0, and size <= 100");
+        Pageable pageable = PageRequest.of(
+                page, size,
+                Sort.by("createdAt").descending()
+        );
+
+        Page<Course> courses = courseRepository.findAllByCourseStatus(CourseStatus.PUBLISHED, pageable);
+
+        return courses.map(c ->
+            courseMapper.toResponse(c, c.getImage() != null && c.getImage().isReady() ? mediaService.getPublicUrl(c.getImage()) : null)
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<CourseResponseDTO> findAllByTitle(String title, int page, int size, Long userId) {
+        validateTitle(title);
+
+        validatePagination(page, size);
+
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("User", userId);
         }
 
         Pageable pageable = PageRequest.of(
@@ -128,7 +169,25 @@ public class CourseService {
                 Sort.by("createdAt").descending()
         );
 
-        Page<Course> courses = courseRepository.findAllByTitleContainingIgnoreCase(title.trim(), pageable);
+        Page<Course> courses = courseRepository.findAllByInstructorIdAndTitleContainingIgnoreCase(userId, title.trim(), pageable);
+
+        return courses.map(c ->
+            courseMapper.toResponse(c, c.getImage() != null && c.getImage().isReady() ? mediaService.getPublicUrl(c.getImage()) : null)
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<CourseResponseDTO> findAllByTitlePublic(String title, int page, int size) {
+        validateTitle(title);
+
+        validatePagination(page, size);
+
+        Pageable pageable = PageRequest.of(
+                page, size,
+                Sort.by("createdAt").descending()
+        );
+
+        Page<Course> courses = courseRepository.findAllByTitleContainingIgnoreCaseAndCourseStatus(title.trim(), CourseStatus.PUBLISHED, pageable);
 
         return courses.map(c ->
             courseMapper.toResponse(c, c.getImage() != null && c.getImage().isReady() ? mediaService.getPublicUrl(c.getImage()) : null)
@@ -143,7 +202,7 @@ public class CourseService {
                 Sort.by("createdAt").descending()
         );
 
-        List<CourseWithRatingProjection> courses = courseRepository.findMostEnrollmentsCourses(pageable);
+        List<CourseWithRatingProjection> courses = courseRepository.findMostEnrollmentsCourses(CourseStatus.PUBLISHED, pageable);
 
         return courses.stream().map(c ->
             courseMapper.toResponseProjection(c, c.getImage() != null && c.getImage().isReady() ? mediaService.getPublicUrl(c.getImage()) : null)
@@ -151,20 +210,34 @@ public class CourseService {
     }
 
     @Transactional(readOnly = true)
-    public CourseResponseDTO findById(Long id) {
+    public CourseResponseDTO findById(Long id, Long userId, List<String> roles) {
         Course course = courseRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Course", id));
+
+        if (course.getCourseStatus() != CourseStatus.PUBLISHED) {
+            if (!course.getInstructor().getId().equals(userId)) {
+                if (!roles.contains(String.valueOf(UserRole.ADMIN))){
+                    throw new ForbiddenException();
+                }
+            }
+        }
 
         return courseMapper.toResponse(course, course.getImage() != null && course.getImage().isReady() ? mediaService.getPublicUrl(course.getImage()) : null);
     }
 
     @Transactional(readOnly = true)
-    public CourseProgressResponseDTO findProgressByUser(Long courseId, Long userId) {
+    public CourseProgressResponseDTO findProgressByUser(Long courseId, Long userId, List<String> roles) {
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User", userId);
         }
 
-        if (!courseRepository.existsById(courseId)) {
-            throw new ResourceNotFoundException("Course", courseId);
+        Course course = courseRepository.findById(courseId).orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
+
+        if (course.getCourseStatus() != CourseStatus.PUBLISHED) {
+            if (!course.getInstructor().getId().equals(userId)) {
+                if (!roles.contains(String.valueOf(UserRole.ADMIN))){
+                    throw new ForbiddenException();
+                }
+            }
         }
 
         if (!enrollmentRepository.existsByCourseIdAndUserId(courseId, userId)) {
@@ -243,10 +316,18 @@ public class CourseService {
     }
 
     @Transactional
-    public CertificateResponseDTO createCertificate(Long courseId, Long userId) {
+    public CertificateResponseDTO createCertificate(Long courseId, Long userId, List<String> roles) {
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
         Course course = courseRepository.findById(courseId).orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
+
+        if (course.getCourseStatus() != CourseStatus.PUBLISHED) {
+            if (!course.getInstructor().getId().equals(userId)) {
+                if (!roles.contains(String.valueOf(UserRole.ADMIN))){
+                    throw new ForbiddenException();
+                }
+            }
+        }
 
         if (!enrollmentRepository.existsByCourseIdAndUserId(courseId, userId)) {
             throw new EnrollmentNotFoundException(courseId, userId);
@@ -261,7 +342,7 @@ public class CourseService {
         ProgressProjection projection = courseRepository.findProgressByUserId(user.getId(), course.getId()).orElseThrow(() -> new ResourceNotFoundException("Course progress", courseId));
 
         if (projection.getTotalLessons() <= 0) {
-            throw new IllegalStateException("Course don't have lessons yet");
+            throw new IllegalStateException("Course doesn't have any lessons yet");
         }
 
         if (!projection.getTotalLessons().equals(projection.getCompletedLessons())) {
@@ -277,11 +358,59 @@ public class CourseService {
         return certificateMapper.toResponse(certificate);
     }
 
+    @Transactional
+    @CacheEvict(cacheNames = "topCourses", allEntries = true)
+    public CourseResponseDTO publish(Long id, Long userId, List<String> roles) {
+        Course course = courseRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Course", id));
+
+        if (!course.getInstructor().getId().equals(userId)) {
+            if (!roles.contains(String.valueOf(UserRole.ADMIN))){
+                throw new ForbiddenException();
+            }
+        }
+
+        if (course.getImage() == null) {
+            throw new IllegalStateException("Course doesn't have an image yet");
+        }
+
+        Long modules = moduleRepository.countByCourseId(course.getId());
+        if (modules < 1) {
+            throw new IllegalStateException("Course doesn't have any modules yet");
+        }
+
+        Long lessons = lessonRepository.countByModuleCourseId(course.getId());
+        Long lessonsWithVideo = lessonRepository.countByModuleCourseIdAndVideoIsNotNull(course.getId());
+        if (lessonsWithVideo < 1) {
+            throw new IllegalStateException("Course doesn't have any lessons yet");
+        }
+        if (!lessonsWithVideo.equals(lessons)) {
+            throw new IllegalStateException("Some lessons doesn't have an video yet");
+        }
+
+        course.markIsPublished();
+
+        course = courseRepository.save(course);
+
+        return courseMapper.toResponse(course, course.getImage() != null && course.getImage().isReady() ? mediaService.getPublicUrl(course.getImage()) : null);
+    }
+
     private String normalizeString(String value) {
         return value.trim();
     }
 
     private String generateCertificateCode() {
         return UUID.randomUUID().toString().replace("-", "");
+    }
+
+    private void validateTitle(String title) {
+        if (title == null || title.trim().length() < 3) {
+            throw new IllegalArgumentException("Title must have a non-null value and be equal to or longer than 3 characters");
+        }
+    }
+
+    private void validatePagination(int page, int size) {
+        if (page < 0 || size <= 0 || size > 100) {
+            throw new IllegalArgumentException("Pagination must have page >= 0, size > 0, and size <= 100");
+        }
     }
 }
