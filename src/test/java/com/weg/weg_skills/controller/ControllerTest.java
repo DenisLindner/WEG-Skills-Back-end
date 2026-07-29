@@ -98,9 +98,9 @@ class ControllerTest {
         assertThat(controller.uploadImage(2L, upload, jwt).getStatusCode().value()).isEqualTo(201);
         assertThat(controller.findAll(0, 10, jwt).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.findAllAdmin(0, 10, jwt).getStatusCode().value()).isEqualTo(200);
-        assertThat(controller.findAllPublic(0, 10).getStatusCode().value()).isEqualTo(200);
+        assertThat(controller.findAllPublished(0, 10).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.findAllByTitle("Java", 0, 10, jwt).getStatusCode().value()).isEqualTo(200);
-        assertThat(controller.findAllByTitlePublic("Java", 0, 10).getStatusCode().value()).isEqualTo(200);
+        assertThat(controller.findAllByTitlePublished("Java", 0, 10).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.findMostEnrollments().getStatusCode().value()).isEqualTo(200);
         assertThat(controller.findById(2L, jwt).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.progressUser(2L, jwt).getStatusCode().value()).isEqualTo(200);
@@ -113,9 +113,9 @@ class ControllerTest {
         verify(courseService).uploadImage(2L, upload, 1L, List.of("INSTRUCTOR"));
         verify(courseService).findAll(0, 10, 1L);
         verify(courseService).findAllAdmin(0, 10, 1L);
-        verify(courseService).findAllPublic(0, 10);
+        verify(courseService).findAllPublished(0, 10);
         verify(courseService).findAllByTitle("Java", 0, 10, 1L);
-        verify(courseService).findAllByTitlePublic("Java", 0, 10);
+        verify(courseService).findAllByTitlePublished("Java", 0, 10);
         verify(courseService).findMostEnrollments();
         verify(courseService).findById(2L, 1L, List.of("INSTRUCTOR"));
         verify(courseService).findProgressByUser(2L, 1L, List.of("INSTRUCTOR"));
