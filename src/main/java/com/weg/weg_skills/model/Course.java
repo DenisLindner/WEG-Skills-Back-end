@@ -1,5 +1,6 @@
 package com.weg.weg_skills.model;
 
+import com.weg.weg_skills.enums.CourseStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -34,6 +35,10 @@ public class Course {
     @JoinColumn(name = "pending_image_media_id", unique = true)
     private Media pendingImage;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "course_status", nullable = false)
+    private CourseStatus courseStatus;
+
     @Version
     private int version;
 
@@ -56,9 +61,14 @@ public class Course {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    public Course(String title, String description, User user) {
+    public Course(String title, String description, User user, CourseStatus courseStatus) {
         this.title = title;
         this.description = description;
         this.instructor = user;
+        this.courseStatus = courseStatus;
+    }
+
+    public void markIsPublished() {
+        this.courseStatus = CourseStatus.PUBLISHED;
     }
 }
