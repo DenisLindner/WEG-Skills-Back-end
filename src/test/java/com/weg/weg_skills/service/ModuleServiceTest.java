@@ -6,6 +6,7 @@ import com.weg.weg_skills.dto.ModuleCreateRequestDTO;
 import com.weg.weg_skills.dto.ModuleUpdateRequestDTO;
 import com.weg.weg_skills.dto.RepositionRequestDTO;
 import com.weg.weg_skills.dto.UploadTicketResponseDTO;
+import com.weg.weg_skills.enums.CourseStatus;
 import com.weg.weg_skills.enums.MediaStatus;
 import com.weg.weg_skills.enums.MediaType;
 import com.weg.weg_skills.enums.UserRole;
@@ -72,6 +73,7 @@ class ModuleServiceTest {
         assertThat(response.id()).isEqualTo(3L);
         assertThat(response.title()).isEqualTo("Module");
         assertThat(response.position()).isEqualTo(2L);
+        assertThat(course.getCourseStatus()).isEqualTo(CourseStatus.DRAFT);
     }
 
     @Test
@@ -157,6 +159,7 @@ class ModuleServiceTest {
         verify(mediaService).delete(4L);
         verify(mediaService).delete(6L);
         verify(moduleRepository).delete(module);
+        assertThat(module.getCourse().getCourseStatus()).isEqualTo(CourseStatus.DRAFT);
     }
 
     @Test
