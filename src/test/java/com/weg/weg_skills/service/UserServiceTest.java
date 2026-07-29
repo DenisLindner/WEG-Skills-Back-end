@@ -8,6 +8,7 @@ import com.weg.weg_skills.dto.UploadTicketResponseDTO;
 import com.weg.weg_skills.dto.UserUpdateRequestDTO;
 import com.weg.weg_skills.enums.MediaStatus;
 import com.weg.weg_skills.enums.MediaType;
+import com.weg.weg_skills.enums.CourseStatus;
 import com.weg.weg_skills.enums.UserRole;
 import com.weg.weg_skills.exceptions.DuplicateResourceException;
 import com.weg.weg_skills.exceptions.ForbiddenException;
@@ -190,7 +191,7 @@ class UserServiceTest {
     @Test
     void shouldNotDeleteUserWithCourses() {
         User user = TestData.user(1L, UserRole.INSTRUCTOR);
-        user.getCourses().add(new Course("Course", "Description", user));
+        user.getCourses().add(new Course("Course", "Description", user, CourseStatus.PUBLISHED));
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
         assertThatThrownBy(() -> service.deleteById(1L)).isInstanceOf(UserHasCoursesException.class);
