@@ -13,5 +13,7 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
     Page<Lesson> findAllByModuleId(Long moduleId, Pageable pageable);
     List<Lesson> findAllByModuleId(Long moduleId);
     Long countByModuleId(Long moduleId);
+    Long countByModuleCourseId(Long courseId);
+    Long countByModuleCourseIdAndVideoIsNotNull(Long courseId);
     Lesson findTopByModuleOrderByPositionDesc(Module module);
 }
