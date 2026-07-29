@@ -1,5 +1,6 @@
 package com.weg.weg_skills.repository;
 
+import com.weg.weg_skills.enums.CourseStatus;
 import com.weg.weg_skills.model.Course;
 import com.weg.weg_skills.projection.CourseWithRatingProjection;
 import com.weg.weg_skills.projection.ProgressProjection;
@@ -17,27 +18,37 @@ import java.util.Optional;
 public interface CourseRepository extends JpaRepository<Course, Long> {
     Boolean existsByTitleIgnoreCase(String title);
 
+    @EntityGraph(attributePaths = "image")
+    Page<Course> findAllByCourseStatus(CourseStatus courseStatus, Pageable pageable);
+
     @Override
     @EntityGraph(attributePaths = "image")
     @NonNull
     Page<Course> findAll(@NonNull Pageable pageable);
 
+    @EntityGraph(attributePaths = "image")
+    Page<Course> findAllByInstructorId(Long instructorId, Pageable pageable);
+
     @Query("""
-            SELECT c.id AS id, c.title AS title, c.description AS description, COALESCE(AVG(r.rate), 0.0) AS rating, i AS image
+            SELECT c.id AS id, c.title AS title, c.description AS description, c.courseStatus AS courseStatus, COALESCE(AVG(r.rate), 0.0) AS rating, i AS image
             FROM Course c
             LEFT JOIN c.enrollments e
             LEFT JOIN c.reviews r
             LEFT JOIN c.image i
+            WHERE c.courseStatus = :status
             GROUP BY
                     c.id,
                     c.title,
                     c.description,
+                    c.courseStatus,
                     i
             ORDER BY COUNT(DISTINCT e.id) DESC
         """)
-    List<CourseWithRatingProjection> findMostEnrollmentsCourses(Pageable pageable);
+    List<CourseWithRatingProjection> findMostEnrollmentsCourses(@Param("status") CourseStatus status, Pageable pageable);
     @EntityGraph(attributePaths = "image")
-    Page<Course> findAllByTitleContainingIgnoreCase(String title, Pageable pageable);
+    Page<Course> findAllByInstructorIdAndTitleContainingIgnoreCase(Long instructorId, String title, Pageable pageable);
+    @EntityGraph(attributePaths = "image")
+    Page<Course> findAllByTitleContainingIgnoreCaseAndCourseStatus(String title, CourseStatus courseStatus, Pageable pageable);
 
     @Query("""
             SELECT
