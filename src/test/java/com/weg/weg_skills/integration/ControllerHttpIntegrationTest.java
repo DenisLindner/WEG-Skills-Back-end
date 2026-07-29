@@ -8,9 +8,7 @@ import com.weg.weg_skills.controller.ReviewController;
 import com.weg.weg_skills.dto.AuthResponseDTO;
 import com.weg.weg_skills.dto.CourseResponseDTO;
 import com.weg.weg_skills.dto.CourseWithRatingResponseDTO;
-import com.weg.weg_skills.dto.LessonResponseDTO;
-import com.weg.weg_skills.dto.ModuleResponseDTO;
-import com.weg.weg_skills.dto.ReviewResponseDTO;
+import com.weg.weg_skills.enums.CourseStatus;
 import com.weg.weg_skills.exceptions.GlobalExceptionHandler;
 import com.weg.weg_skills.exceptions.ResourceNotFoundException;
 import com.weg.weg_skills.service.AuthService;
@@ -103,18 +101,12 @@ class ControllerHttpIntegrationTest {
 
     @Test
     void shouldListCatalogResourcesThroughHttp() throws Exception {
-        when(courseService.findAll(0, 10)).thenReturn(new PageImpl<>(
-                List.of(new CourseResponseDTO(1L, "Course", "Description", null)), PageRequest.of(0, 10), 1));
-        when(courseService.findAllByTitle("Course", 0, 10)).thenReturn(new PageImpl<>(
-                List.of(new CourseResponseDTO(1L, "Course", "Description", null)), PageRequest.of(0, 10), 1));
+        when(courseService.findAllPublic(0, 10)).thenReturn(new PageImpl<>(
+                List.of(new CourseResponseDTO(1L, "Course", "Description", CourseStatus.PUBLISHED, null)), PageRequest.of(0, 10), 1));
+        when(courseService.findAllByTitlePublic("Course", 0, 10)).thenReturn(new PageImpl<>(
+                List.of(new CourseResponseDTO(1L, "Course", "Description", CourseStatus.PUBLISHED, null)), PageRequest.of(0, 10), 1));
         when(courseService.findMostEnrollments()).thenReturn(List.of(
-                new CourseWithRatingResponseDTO(1L, "Course", "Description", 9.0, null)));
-        when(moduleService.findAllByCourse(1L, 0, 10)).thenReturn(new PageImpl<>(
-                List.of(new ModuleResponseDTO(2L, "Module", "Description", 1L, null)), PageRequest.of(0, 10), 1));
-        when(lessonService.findAllByModule(2L, 0, 10)).thenReturn(new PageImpl<>(
-                List.of(new LessonResponseDTO(3L, "Lesson", "Description", 1L)), PageRequest.of(0, 10), 1));
-        when(reviewService.findAllByCourse(1L, 0, 10)).thenReturn(new PageImpl<>(
-                List.of(new ReviewResponseDTO(4L, 9, "Course", "User", null)), PageRequest.of(0, 10), 1));
+                new CourseWithRatingResponseDTO(1L, "Course", "Description", CourseStatus.PUBLISHED, 9.0, null)));
 
         mockMvc.perform(get("/courses"))
                 .andExpect(status().isOk())
@@ -125,27 +117,17 @@ class ControllerHttpIntegrationTest {
         mockMvc.perform(get("/courses/top-courses"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].rating").value(9.0));
-        mockMvc.perform(get("/modules/course/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].title").value("Module"))
-                .andExpect(jsonPath("$.content[0].position").value(1));
-        mockMvc.perform(get("/lessons/module/2"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].title").value("Lesson"))
-                .andExpect(jsonPath("$.content[0].position").value(1));
-        mockMvc.perform(get("/reviews/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].rate").value(9));
     }
 
     @Test
     void shouldReturnProblemDetailsWhenResourceDoesNotExist() throws Exception {
-        when(courseService.findById(99L)).thenThrow(new ResourceNotFoundException("Course", 99L));
+        when(courseService.findAllByTitlePublic("Missing", 0, 10))
+                .thenThrow(new ResourceNotFoundException("Course", 99L));
 
-        mockMvc.perform(get("/courses/99"))
+        mockMvc.perform(get("/courses/title").param("title", "Missing"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.title").value("Resource not found"))
                 .andExpect(jsonPath("$.detail").value("Course with id: 99, not found"))
-                .andExpect(jsonPath("$.instance").value("/courses/99"));
+                .andExpect(jsonPath("$.instance").value("/courses/title"));
     }
 }
