@@ -96,24 +96,32 @@ class ControllerTest {
 
         assertThat(controller.create(create, jwt).getStatusCode().value()).isEqualTo(201);
         assertThat(controller.uploadImage(2L, upload, jwt).getStatusCode().value()).isEqualTo(201);
-        assertThat(controller.findAll(0, 10).getStatusCode().value()).isEqualTo(200);
-        assertThat(controller.findAllByTitle("Java", 0, 10).getStatusCode().value()).isEqualTo(200);
+        assertThat(controller.findAll(0, 10, jwt).getStatusCode().value()).isEqualTo(200);
+        assertThat(controller.findAllAdmin(0, 10).getStatusCode().value()).isEqualTo(200);
+        assertThat(controller.findAllPublic(0, 10).getStatusCode().value()).isEqualTo(200);
+        assertThat(controller.findAllByTitle("Java", 0, 10, jwt).getStatusCode().value()).isEqualTo(200);
+        assertThat(controller.findAllByTitlePublic("Java", 0, 10).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.findMostEnrollments().getStatusCode().value()).isEqualTo(200);
-        assertThat(controller.findById(2L).getStatusCode().value()).isEqualTo(200);
+        assertThat(controller.findById(2L, jwt).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.progressUser(2L, jwt).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.generateCertificate(2L, jwt).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.update(2L, update, jwt).getStatusCode().value()).isEqualTo(200);
+        assertThat(controller.publish(2L, jwt).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.deleteById(2L, jwt).getStatusCode().value()).isEqualTo(204);
 
         verify(courseService).create(create, 1L);
         verify(courseService).uploadImage(2L, upload, 1L, List.of("INSTRUCTOR"));
-        verify(courseService).findAll(0, 10);
-        verify(courseService).findAllByTitle("Java", 0, 10);
+        verify(courseService).findAll(0, 10, 1L);
+        verify(courseService).findAllAdmin(0, 10, 1L);
+        verify(courseService).findAllPublic(0, 10);
+        verify(courseService).findAllByTitle("Java", 0, 10, 1L);
+        verify(courseService).findAllByTitlePublic("Java", 0, 10);
         verify(courseService).findMostEnrollments();
-        verify(courseService).findById(2L);
-        verify(courseService).findProgressByUser(2L, 1L);
-        verify(courseService).createCertificate(2L, 1L);
+        verify(courseService).findById(2L, 1L, List.of("INSTRUCTOR"));
+        verify(courseService).findProgressByUser(2L, 1L, List.of("INSTRUCTOR"));
+        verify(courseService).createCertificate(2L, 1L, List.of("INSTRUCTOR"));
         verify(courseService).update(2L, update, 1L, List.of("INSTRUCTOR"));
+        verify(courseService).publish(2L, 1L, List.of("INSTRUCTOR"));
         verify(courseService).deleteById(2L, 1L, List.of("INSTRUCTOR"));
     }
 
@@ -137,8 +145,8 @@ class ControllerTest {
 
         assertThat(controller.create(create, jwt).getStatusCode().value()).isEqualTo(201);
         assertThat(controller.uploadImage(3L, upload, jwt).getStatusCode().value()).isEqualTo(201);
-        assertThat(controller.findAllByCourse(2L, 0, 10).getStatusCode().value()).isEqualTo(200);
-        assertThat(controller.findById(3L).getStatusCode().value()).isEqualTo(200);
+        assertThat(controller.findAllByCourse(2L, 0, 10, jwt).getStatusCode().value()).isEqualTo(200);
+        assertThat(controller.findById(3L, jwt).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.update(3L, update, jwt).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.deleteById(3L, jwt).getStatusCode().value()).isEqualTo(204);
         assertThat(controller.reposition(reposition, jwt).getStatusCode().value()).isEqualTo(204);
@@ -157,7 +165,7 @@ class ControllerTest {
 
         assertThat(controller.create(create, jwt).getStatusCode().value()).isEqualTo(201);
         assertThat(controller.uploadVideo(4L, upload, jwt).getStatusCode().value()).isEqualTo(201);
-        assertThat(controller.findAllByModule(3L, 0, 10).getStatusCode().value()).isEqualTo(200);
+        assertThat(controller.findAllByModule(3L, 0, 10, jwt).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.findById(4L, jwt).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.update(4L, update, jwt).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.deleteById(4L, jwt).getStatusCode().value()).isEqualTo(204);
@@ -165,7 +173,7 @@ class ControllerTest {
         assertThat(controller.completeLesson(4L, jwt).getStatusCode().value()).isEqualTo(200);
 
         verify(lessonService).reposition(reposition, 1L, List.of("INSTRUCTOR"));
-        verify(lessonService).completeLesson(4L, 1L);
+        verify(lessonService).completeLesson(4L, 1L, List.of("INSTRUCTOR"));
     }
 
     @Test
@@ -180,7 +188,7 @@ class ControllerTest {
         assertThat(enrollmentController.enroll(enrollment, jwt).getStatusCode().value()).isEqualTo(201);
         assertThat(enrollmentController.getMeEnrollments(jwt, 0, 10).getStatusCode().value()).isEqualTo(200);
         assertThat(reviewController.create(createReview, jwt).getStatusCode().value()).isEqualTo(201);
-        assertThat(reviewController.findAllByCourse(2L, 0, 10).getStatusCode().value()).isEqualTo(200);
+        assertThat(reviewController.findAllByCourse(2L, 0, 10, jwt).getStatusCode().value()).isEqualTo(200);
         assertThat(reviewController.findAllByUser(jwt, 0, 10).getStatusCode().value()).isEqualTo(200);
         assertThat(reviewController.update(5L, updateReview, jwt).getStatusCode().value()).isEqualTo(200);
         assertThat(reviewController.deleteById(5L, jwt).getStatusCode().value()).isEqualTo(204);
