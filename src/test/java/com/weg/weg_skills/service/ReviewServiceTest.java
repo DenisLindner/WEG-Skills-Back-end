@@ -90,14 +90,15 @@ class ReviewServiceTest {
 
     @Test
     void shouldListReviewsByCourseAndUser() {
-        Review review = new Review(8, course(), student());
+        Course course = course();
+        Review review = new Review(8, course, student());
         review.setId(3L);
-        when(courseRepository.existsById(2L)).thenReturn(true);
+        when(courseRepository.findById(2L)).thenReturn(Optional.of(course));
         when(userRepository.existsById(1L)).thenReturn(true);
         when(reviewRepository.findAllByCourseId(any(), any())).thenReturn(new PageImpl<>(List.of(review)));
         when(reviewRepository.findAllByUserId(any(), any())).thenReturn(new PageImpl<>(List.of(review)));
 
-        assertThat(service.findAllByCourse(2L, 0, 10).getContent()).hasSize(1);
+        assertThat(service.findAllByCourse(2L, 0, 10, 1L, List.of("STUDENT")).getContent()).hasSize(1);
         assertThat(service.findAllByUser(1L, 0, 10).getContent()).hasSize(1);
     }
 
@@ -128,10 +129,10 @@ class ReviewServiceTest {
 
     @Test
     void shouldRejectInvalidPaginationOrMissingParent() {
-        assertThatThrownBy(() -> service.findAllByCourse(2L, -1, 10))
+        assertThatThrownBy(() -> service.findAllByCourse(2L, -1, 10, 1L, List.of("STUDENT")))
                 .isInstanceOf(IllegalArgumentException.class);
-        when(courseRepository.existsById(2L)).thenReturn(false);
-        assertThatThrownBy(() -> service.findAllByCourse(2L, 0, 10))
+        when(courseRepository.findById(2L)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> service.findAllByCourse(2L, 0, 10, 1L, List.of("STUDENT")))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
