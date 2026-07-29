@@ -97,7 +97,7 @@ class ControllerTest {
         assertThat(controller.create(create, jwt).getStatusCode().value()).isEqualTo(201);
         assertThat(controller.uploadImage(2L, upload, jwt).getStatusCode().value()).isEqualTo(201);
         assertThat(controller.findAll(0, 10, jwt).getStatusCode().value()).isEqualTo(200);
-        assertThat(controller.findAllAdmin(0, 10).getStatusCode().value()).isEqualTo(200);
+        assertThat(controller.findAllAdmin(0, 10, jwt).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.findAllPublic(0, 10).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.findAllByTitle("Java", 0, 10, jwt).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.findAllByTitlePublic("Java", 0, 10).getStatusCode().value()).isEqualTo(200);
