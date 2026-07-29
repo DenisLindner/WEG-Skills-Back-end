@@ -71,4 +71,8 @@ public class Course {
     public void markIsPublished() {
         this.courseStatus = CourseStatus.PUBLISHED;
     }
+
+    public void markAsDraft() {
+        this.courseStatus = CourseStatus.DRAFT;
+    }
 }
