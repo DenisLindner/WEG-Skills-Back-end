@@ -101,9 +101,9 @@ class ControllerHttpIntegrationTest {
 
     @Test
     void shouldListCatalogResourcesThroughHttp() throws Exception {
-        when(courseService.findAllPublic(0, 10)).thenReturn(new PageImpl<>(
+        when(courseService.findAllPublished(0, 10)).thenReturn(new PageImpl<>(
                 List.of(new CourseResponseDTO(1L, "Course", "Description", CourseStatus.PUBLISHED, null)), PageRequest.of(0, 10), 1));
-        when(courseService.findAllByTitlePublic("Course", 0, 10)).thenReturn(new PageImpl<>(
+        when(courseService.findAllByTitlePublished("Course", 0, 10)).thenReturn(new PageImpl<>(
                 List.of(new CourseResponseDTO(1L, "Course", "Description", CourseStatus.PUBLISHED, null)), PageRequest.of(0, 10), 1));
         when(courseService.findMostEnrollments()).thenReturn(List.of(
                 new CourseWithRatingResponseDTO(1L, "Course", "Description", CourseStatus.PUBLISHED, 9.0, null)));
@@ -121,7 +121,7 @@ class ControllerHttpIntegrationTest {
 
     @Test
     void shouldReturnProblemDetailsWhenResourceDoesNotExist() throws Exception {
-        when(courseService.findAllByTitlePublic("Missing", 0, 10))
+        when(courseService.findAllByTitlePublished("Missing", 0, 10))
                 .thenThrow(new ResourceNotFoundException("Course", 99L));
 
         mockMvc.perform(get("/courses/title").param("title", "Missing"))
