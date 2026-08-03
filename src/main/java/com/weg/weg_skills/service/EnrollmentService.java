@@ -4,6 +4,7 @@ import com.weg.weg_skills.dto.EnrollmentRequestDTO;
 import com.weg.weg_skills.dto.EnrollmentResponseDTO;
 import com.weg.weg_skills.enums.CourseStatus;
 import com.weg.weg_skills.exceptions.EnrollmentAlreadyExistsException;
+import com.weg.weg_skills.exceptions.EnrollmentNotFoundException;
 import com.weg.weg_skills.exceptions.ResourceNotFoundException;
 import com.weg.weg_skills.mapper.EnrollmentMapper;
 import com.weg.weg_skills.model.Course;
@@ -72,5 +73,20 @@ public class EnrollmentService {
         Page<Enrollment> enrollments = enrollmentRepository.findAllByUser(user, pageable);
 
         return enrollments.map(enrollmentMapper::toResponseDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public EnrollmentResponseDTO getMeEnrollmentByCourse(Long courseId, Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("User", userId);
+        }
+
+        if (!courseRepository.existsById(courseId)) {
+            throw new ResourceNotFoundException("Course", courseId);
+        }
+
+        Enrollment enrollment = enrollmentRepository.findByCourseIdAndUserId(courseId, userId).orElseThrow(() -> new EnrollmentNotFoundException(courseId, userId));
+
+        return enrollmentMapper.toResponseDTO(enrollment);
     }
 }
