@@ -10,10 +10,15 @@ import com.weg.weg_skills.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -55,6 +60,26 @@ public class UserService {
         User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User", id));
 
         return userMapper.toResponse(user, user.getImage() != null && user.getImage().isReady() ? mediaService.getPublicUrl(user.getImage()) : null);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<UserResponseDTO> findAllInstructors(int page, int size, Long userId, List<String> roles) {
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("User", userId);
+        }
+
+        if (!roles.contains(String.valueOf(UserRole.ADMIN))) {
+            throw new ForbiddenException();
+        }
+
+        Pageable pageable = PageRequest.of(
+                page, size,
+                Sort.by("createdAt").descending()
+        );
+
+        Page<User> users = userRepository.findAllByRole(UserRole.INSTRUCTOR, pageable);
+
+        return users.map(u -> userMapper.toResponse(u, u.getImage() != null && u.getImage().isReady() ? mediaService.getPublicUrl(u.getImage()) : null));
     }
 
     @Transactional
@@ -161,6 +186,40 @@ public class UserService {
         userRepository.deleteById(id);
 
         log.atInfo().addKeyValue("userId", id).log("User deleted");
+    }
+
+    @Transactional
+    @CacheEvict(cacheNames = "topCourses", allEntries = true)
+    public void deleteInstructorById(Long id, Long userId, List<String> roles) {
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("User", userId);
+        }
+
+        if (!roles.contains(String.valueOf(UserRole.ADMIN))) {
+            throw new ForbiddenException();
+        }
+
+        User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User", id));
+
+        if (!user.getRole().equals(UserRole.INSTRUCTOR)) {
+            throw new IllegalStateException("User requested is not an instructor");
+        }
+
+        if (!user.getCourses().isEmpty()) {
+            throw new UserHasCoursesException();
+        }
+
+        if (user.getImage() != null) {
+            mediaService.delete(user.getImage().getId());
+        }
+
+        if (user.getPendingImage() != null) {
+            mediaService.delete(user.getPendingImage().getId());
+        }
+
+        userRepository.deleteById(id);
+
+        log.atInfo().addKeyValue("userId", id).log("Instructor deleted by user: "+userId);
     }
 
     private String normalizeEmail(String email) {
