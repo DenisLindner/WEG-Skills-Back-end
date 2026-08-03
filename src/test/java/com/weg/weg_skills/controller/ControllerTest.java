@@ -187,11 +187,14 @@ class ControllerTest {
 
         assertThat(enrollmentController.enroll(enrollment, jwt).getStatusCode().value()).isEqualTo(201);
         assertThat(enrollmentController.getMeEnrollments(jwt, 0, 10).getStatusCode().value()).isEqualTo(200);
+        assertThat(enrollmentController.getMeEnrollmentByCourse(2L, jwt).getStatusCode().value()).isEqualTo(200);
         assertThat(reviewController.create(createReview, jwt).getStatusCode().value()).isEqualTo(201);
         assertThat(reviewController.findAllByCourse(2L, 0, 10, jwt).getStatusCode().value()).isEqualTo(200);
         assertThat(reviewController.findAllByUser(jwt, 0, 10).getStatusCode().value()).isEqualTo(200);
         assertThat(reviewController.update(5L, updateReview, jwt).getStatusCode().value()).isEqualTo(200);
         assertThat(reviewController.deleteById(5L, jwt).getStatusCode().value()).isEqualTo(204);
+
+        verify(enrollmentService).getMeEnrollmentByCourse(2L, 1L);
     }
 
     @Test
