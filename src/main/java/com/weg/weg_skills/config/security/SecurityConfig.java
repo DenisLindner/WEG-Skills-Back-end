@@ -89,8 +89,9 @@ public class SecurityConfig {
                         .hasRole("ADMIN")
 
                         .requestMatchers(
-                                HttpMethod.POST,
-                                "/users/instructor"
+                                "/users/admin/**",
+                                "/users/instructor",
+                                "/users/instructor/**"
                         ).hasRole("ADMIN")
 
                         .requestMatchers(
