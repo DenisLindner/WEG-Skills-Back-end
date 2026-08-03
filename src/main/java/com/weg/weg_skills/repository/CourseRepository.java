@@ -2,6 +2,7 @@ package com.weg.weg_skills.repository;
 
 import com.weg.weg_skills.enums.CourseStatus;
 import com.weg.weg_skills.model.Course;
+import com.weg.weg_skills.projection.CourseDetailsProjection;
 import com.weg.weg_skills.projection.CourseWithRatingProjection;
 import com.weg.weg_skills.projection.ProgressProjection;
 import org.jspecify.annotations.NonNull;
@@ -18,8 +19,25 @@ import java.util.Optional;
 public interface CourseRepository extends JpaRepository<Course, Long> {
     Boolean existsByTitleIgnoreCase(String title);
 
-    @EntityGraph(attributePaths = "image")
-    Page<Course> findAllByCourseStatus(CourseStatus courseStatus, Pageable pageable);
+    @Query(value = """
+            SELECT c.id AS id, c.title AS title, c.description AS description, c.courseStatus AS courseStatus, COALESCE(AVG(r.rate), 0.0) AS rating, i AS image
+            FROM Course c
+            LEFT JOIN c.reviews r
+            LEFT JOIN c.image i
+            WHERE c.courseStatus = :courseStatus
+            GROUP BY
+                    c.id,
+                    c.title,
+                    c.description,
+                    c.courseStatus,
+                    i,
+                    c.createdAt
+        """, countQuery = """
+            SELECT COUNT(c)
+            FROM Course c
+            WHERE c.courseStatus = :courseStatus
+        """)
+    Page<CourseWithRatingProjection> findAllByCourseStatus(@Param("courseStatus") CourseStatus courseStatus, Pageable pageable);
 
     @Override
     @EntityGraph(attributePaths = "image")
@@ -29,6 +47,27 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     @EntityGraph(attributePaths = "image")
     Page<Course> findAllByInstructorId(Long instructorId, Pageable pageable);
 
+    @Query(value = """
+            SELECT c.id AS id,
+                   c.title AS title,
+                   c.description AS description,
+                   c.courseStatus AS courseStatus,
+                   c.instructor.id AS instructorId,
+                   COALESCE(AVG(r.rate), 0.0) AS rating,
+                   i AS image
+            FROM Course c
+            LEFT JOIN c.reviews r
+            LEFT JOIN c.image i
+            WHERE c.id = :id
+            GROUP BY
+                    c.id,
+                    c.title,
+                    c.description,
+                    c.courseStatus,
+                    c.instructor.id,
+                    i
+        """)
+    Optional<CourseDetailsProjection> findByIdWithRating(@Param("id") Long id);
     @Query("""
             SELECT c.id AS id, c.title AS title, c.description AS description, c.courseStatus AS courseStatus, COALESCE(AVG(r.rate), 0.0) AS rating, i AS image
             FROM Course c
@@ -47,8 +86,28 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     List<CourseWithRatingProjection> findMostEnrollmentsCourses(@Param("status") CourseStatus status, Pageable pageable);
     @EntityGraph(attributePaths = "image")
     Page<Course> findAllByInstructorIdAndTitleContainingIgnoreCase(Long instructorId, String title, Pageable pageable);
-    @EntityGraph(attributePaths = "image")
-    Page<Course> findAllByTitleContainingIgnoreCaseAndCourseStatus(String title, CourseStatus courseStatus, Pageable pageable);
+
+    @Query(value = """
+            SELECT c.id AS id, c.title AS title, c.description AS description, c.courseStatus AS courseStatus, COALESCE(AVG(r.rate), 0.0) AS rating, i AS image
+            FROM Course c
+            LEFT JOIN c.reviews r
+            LEFT JOIN c.image i
+            WHERE LOWER(c.title) LIKE LOWER(CONCAT('%', :title, '%'))
+                    AND c.courseStatus = :courseStatus
+            GROUP BY
+                    c.id,
+                    c.title,
+                    c.description,
+                    c.courseStatus,
+                    i,
+                    c.createdAt
+        """, countQuery = """
+            SELECT COUNT(c)
+            FROM Course c
+            WHERE LOWER(c.title) LIKE LOWER(CONCAT('%', :title, '%'))
+              AND c.courseStatus = :courseStatus
+        """)
+    Page<CourseWithRatingProjection> findAllByTitleContainingIgnoreCaseAndCourseStatus(@Param("title") String title, @Param("courseStatus") CourseStatus courseStatus, Pageable pageable);
 
     @Query("""
             SELECT

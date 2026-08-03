@@ -23,6 +23,7 @@ import com.weg.weg_skills.model.LessonProgress;
 import com.weg.weg_skills.model.Media;
 import com.weg.weg_skills.model.Module;
 import com.weg.weg_skills.model.User;
+import com.weg.weg_skills.projection.CourseDetailsProjection;
 import com.weg.weg_skills.projection.CourseWithRatingProjection;
 import com.weg.weg_skills.projection.ProgressProjection;
 import com.weg.weg_skills.repository.CertificateRepository;
@@ -69,6 +70,7 @@ class CourseServiceTest {
     @Mock ModuleRepository moduleRepository;
     @Mock LessonRepository lessonRepository;
     @Mock CourseWithRatingProjection courseProjection;
+    @Mock CourseDetailsProjection courseDetailsProjection;
     @Mock ProgressProjection progressProjection;
 
     private CourseService service;
@@ -188,10 +190,17 @@ class CourseServiceTest {
 
     @Test
     void shouldFindCourseById() {
-        Course course = TestData.course(2L, TestData.user(1L, UserRole.INSTRUCTOR));
-        when(courseRepository.findById(2L)).thenReturn(Optional.of(course));
+        when(courseDetailsProjection.getId()).thenReturn(2L);
+        when(courseDetailsProjection.getTitle()).thenReturn("Java Basics");
+        when(courseDetailsProjection.getDescription()).thenReturn("Course description");
+        when(courseDetailsProjection.getCourseStatus()).thenReturn(CourseStatus.PUBLISHED);
+        when(courseDetailsProjection.getRating()).thenReturn(8.5);
+        when(courseRepository.findByIdWithRating(2L)).thenReturn(Optional.of(courseDetailsProjection));
 
-        assertThat(service.findById(2L, 5L, List.of("STUDENT")).id()).isEqualTo(2L);
+        var response = service.findById(2L, 5L, List.of("STUDENT"));
+
+        assertThat(response.id()).isEqualTo(2L);
+        assertThat(response.rating()).isEqualTo(8.5);
     }
 
     @Test
@@ -337,7 +346,7 @@ class CourseServiceTest {
 
     @Test
     void shouldFailWhenCourseDoesNotExist() {
-        when(courseRepository.findById(99L)).thenReturn(Optional.empty());
+        when(courseRepository.findByIdWithRating(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.findById(99L, 1L, List.of("INSTRUCTOR"))).isInstanceOf(ResourceNotFoundException.class);
         verify(mediaService, never()).getPublicUrl(any(Media.class));
@@ -374,9 +383,9 @@ class CourseServiceTest {
 
     @Test
     void shouldHideDraftFromAnotherUser() {
-        Course course = TestData.course(2L, TestData.user(1L, UserRole.INSTRUCTOR));
-        course.setCourseStatus(CourseStatus.DRAFT);
-        when(courseRepository.findById(2L)).thenReturn(Optional.of(course));
+        when(courseDetailsProjection.getCourseStatus()).thenReturn(CourseStatus.DRAFT);
+        when(courseDetailsProjection.getInstructorId()).thenReturn(1L);
+        when(courseRepository.findByIdWithRating(2L)).thenReturn(Optional.of(courseDetailsProjection));
 
         assertThatThrownBy(() -> service.findById(2L, 9L, List.of("STUDENT")))
                 .isInstanceOf(ForbiddenException.class);
