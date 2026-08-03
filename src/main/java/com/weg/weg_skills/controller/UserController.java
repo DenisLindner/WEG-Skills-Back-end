@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -22,6 +23,12 @@ public class UserController {
     @Operation(summary = "Find current user profile")
     public ResponseEntity<UserResponseDTO> getMeProfile(@AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.status(200).body(userService.getMeProfile(jwt.getClaim("userId")));
+    }
+
+    @GetMapping(path = "/admin/instructor")
+    @Operation(summary = "Find all instructors")
+    public ResponseEntity<Page<UserResponseDTO>> findInstructors(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(200).body(userService.findAllInstructors(page, size, jwt.getClaim("userId"), jwt.getClaim("roles")));
     }
 
     @PostMapping(path = "/instructor")
@@ -53,6 +60,13 @@ public class UserController {
     @Operation(summary = "Delete current user")
     public ResponseEntity<Void> delete(@AuthenticationPrincipal Jwt jwt) {
         userService.deleteById(jwt.getClaim("userId"));
+        return ResponseEntity.status(204).build();
+    }
+
+    @DeleteMapping(path = "/instructor/{id}")
+    @Operation(summary = "Delete instructor by id")
+    public ResponseEntity<Void> deleteInstructor(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        userService.deleteInstructorById(id, jwt.getClaim("userId"), jwt.getClaim("roles"));
         return ResponseEntity.status(204).build();
     }
 }
