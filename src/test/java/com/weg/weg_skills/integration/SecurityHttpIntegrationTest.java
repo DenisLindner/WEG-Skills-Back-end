@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -31,6 +32,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -150,5 +152,29 @@ class SecurityHttpIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated());
+    }
+
+    @Test
+    void shouldAllowOnlyAdminToListAndDeleteInstructors() throws Exception {
+        mockMvc.perform(get("/users/admin/instructor")
+                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_INSTRUCTOR"))))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(delete("/users/instructor/2")
+                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_INSTRUCTOR"))))
+                .andExpect(status().isForbidden());
+
+        when(userService.findAllInstructors(0, 10, 1L, List.of("ADMIN"))).thenReturn(Page.empty());
+        mockMvc.perform(get("/users/admin/instructor")
+                        .with(jwt()
+                                .jwt(token -> token.claim("userId", 1L).claim("roles", List.of("ADMIN")))
+                                .authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(delete("/users/instructor/2")
+                        .with(jwt()
+                                .jwt(token -> token.claim("userId", 1L).claim("roles", List.of("ADMIN")))
+                                .authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
+                .andExpect(status().isNoContent());
     }
 }
