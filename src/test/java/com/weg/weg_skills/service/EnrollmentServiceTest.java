@@ -5,6 +5,7 @@ import com.weg.weg_skills.dto.EnrollmentRequestDTO;
 import com.weg.weg_skills.enums.CourseStatus;
 import com.weg.weg_skills.enums.UserRole;
 import com.weg.weg_skills.exceptions.EnrollmentAlreadyExistsException;
+import com.weg.weg_skills.exceptions.EnrollmentNotFoundException;
 import com.weg.weg_skills.exceptions.ResourceNotFoundException;
 import com.weg.weg_skills.mapper.EnrollmentMapper;
 import com.weg.weg_skills.model.Course;
@@ -93,6 +94,31 @@ class EnrollmentServiceTest {
         when(enrollmentRepository.findAllByUser(any(), any())).thenReturn(new PageImpl<>(List.of(enrollment)));
 
         assertThat(service.getMeEnrollments(1L, 0, 10).getContent()).hasSize(1);
+    }
+
+    @Test
+    void shouldFindCurrentUserEnrollmentByCourse() {
+        User user = TestData.user(1L, UserRole.STUDENT);
+        Course course = TestData.course(2L, TestData.user(3L, UserRole.INSTRUCTOR));
+        Enrollment enrollment = new Enrollment(user, course);
+        enrollment.setEnrolledAt(Instant.now());
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(courseRepository.existsById(2L)).thenReturn(true);
+        when(enrollmentRepository.findByCourseIdAndUserId(2L, 1L)).thenReturn(Optional.of(enrollment));
+
+        var response = service.getMeEnrollmentByCourse(2L, 1L);
+
+        assertThat(response.userId()).isEqualTo(1L);
+        assertThat(response.courseId()).isEqualTo(2L);
+    }
+
+    @Test
+    void shouldRejectMissingCurrentUserEnrollmentByCourse() {
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(courseRepository.existsById(2L)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.getMeEnrollmentByCourse(2L, 1L))
+                .isInstanceOf(EnrollmentNotFoundException.class);
     }
 
     @Test
