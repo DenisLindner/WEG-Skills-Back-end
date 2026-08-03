@@ -31,4 +31,10 @@ public class EnrollmentController {
     public ResponseEntity<Page<EnrollmentResponseDTO>> getMeEnrollments(@AuthenticationPrincipal Jwt jwt, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.status(200).body(enrollmentService.getMeEnrollments(jwt.getClaim("userId"), page, size));
     }
+
+    @GetMapping(path = "/me/{courseId}")
+    @Operation(summary = "Find enrollment by current user and course")
+    public ResponseEntity<EnrollmentResponseDTO> getMeEnrollmentByCourse(@PathVariable Long courseId, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(200).body(enrollmentService.getMeEnrollmentByCourse(courseId, jwt.getClaim("userId")));
+    }
 }

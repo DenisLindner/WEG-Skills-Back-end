@@ -160,14 +160,16 @@ As tabelas abaixo apresentam um resumo das rotas. Os contratos completos de entr
 
 ### Usuários
 
-| Método | Endpoint | Acesso | Descrição |
-|---|---|---|---|
-| `GET` | `/users/me` | Autenticado | Retorna o perfil atual |
-| `POST` | `/users/instructor` | `ADMIN` | Cadastra um instrutor |
+| Método | Endpoint              | Acesso      | Descrição                                    |
+|---|-----------------------|-------------|----------------------------------------------|
+| `GET` | `/users/me`           | Autenticado | Retorna o perfil atual                       |
+| `GET` | `/users/admin/instructor`            | `ADMIN`     | Retorna uma lista de instrutores             |
+| `POST` | `/users/instructor`   | `ADMIN`     | Cadastra um instrutor                        |
 | `POST` | `/users/me/images/upload` | Autenticado | Gera um ticket para upload da foto de perfil |
-| `PATCH` | `/users/me` | Autenticado | Atualiza o perfil atual |
-| `PATCH` | `/users/me/password` | Autenticado | Altera a senha atual |
-| `DELETE` | `/users/me` | Autenticado | Exclui a própria conta |
+| `PATCH` | `/users/me`           | Autenticado | Atualiza o perfil atual                      |
+| `PATCH` | `/users/me/password`  | Autenticado | Altera a senha atual                         |
+| `DELETE` | `/users/me`           | Autenticado | Exclui a própria conta                       |
+| `DELETE` | `/users/instructor/{id}`             | `ADMIN`     | Exclui a conta de um instrutor               |
 
 ### Cursos
 
@@ -224,10 +226,11 @@ As tabelas abaixo apresentam um resumo das rotas. Os contratos completos de entr
 
 ### Matrículas
 
-| Método | Endpoint | Acesso | Descrição |
-|---|---|---|---|
-| `POST` | `/enrollments` | Autenticado | Matricula o aluno em um curso publicado |
-| `GET` | `/enrollments/me` | Autenticado | Lista as matrículas do usuário atual |
+| Método | Endpoint           | Acesso | Descrição                                             |
+|---|--------------------|---|-------------------------------------------------------|
+| `POST` | `/enrollments`     | Autenticado | Matricula o aluno em um curso publicado               |
+| `GET` | `/enrollments/me`  | Autenticado | Lista as matrículas do usuário atual                  |
+| `GET` | `/enrollments/me/{courseId}` | Autenticado | Busca uma matrícula do usuário atual pelo id do curso |
 
 ### Avaliações
 

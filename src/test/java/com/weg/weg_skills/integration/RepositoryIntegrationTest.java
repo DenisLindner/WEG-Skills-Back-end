@@ -56,6 +56,7 @@ class RepositoryIntegrationTest {
         User student = userRepository.save(new User(
                 "Student", "student@example.com", "password", UserRole.STUDENT));
         Course course = courseRepository.save(new Course("Java", "Description", instructor, CourseStatus.PUBLISHED));
+        courseRepository.save(new Course("Java Draft", "Description", instructor, CourseStatus.DRAFT));
         Module module = moduleRepository.save(new Module("Basics", "Description", course, 1L));
         Lesson lesson = lessonRepository.save(new Lesson("Introduction", "Description", module, 1L));
         Enrollment enrollment = enrollmentRepository.save(new Enrollment(student, course));
@@ -68,8 +69,21 @@ class RepositoryIntegrationTest {
         assertThat(userRepository.existsByEmailIgnoreCase("INSTRUCTOR@EXAMPLE.COM")).isTrue();
         assertThat(userRepository.findByEmailIgnoreCase("STUDENT@EXAMPLE.COM")).contains(student);
         assertThat(courseRepository.existsByTitleIgnoreCase("java")).isTrue();
-        assertThat(courseRepository.findAllByTitleContainingIgnoreCaseAndCourseStatus("jav", CourseStatus.PUBLISHED, PageRequest.of(0, 10)))
-                .contains(course);
+        assertThat(courseRepository.findAllByCourseStatus(CourseStatus.PUBLISHED, PageRequest.of(0, 10)))
+                .singleElement()
+                .satisfies(item -> {
+                    assertThat(item.getId()).isEqualTo(course.getId());
+                    assertThat(item.getRating()).isEqualTo(9.0);
+                });
+        assertThat(courseRepository.findAllByTitleContainingIgnoreCaseAndCourseStatus("jAv", CourseStatus.PUBLISHED, PageRequest.of(0, 10)))
+                .singleElement()
+                .satisfies(item -> assertThat(item.getId()).isEqualTo(course.getId()));
+        assertThat(courseRepository.findByIdWithRating(course.getId()))
+                .hasValueSatisfying(item -> {
+                    assertThat(item.getId()).isEqualTo(course.getId());
+                    assertThat(item.getInstructorId()).isEqualTo(instructor.getId());
+                    assertThat(item.getRating()).isEqualTo(9.0);
+                });
         assertThat(moduleRepository.existsByCourseAndTitleIgnoreCase(course, "BASICS")).isTrue();
         assertThat(lessonRepository.existsByModuleAndTitleIgnoreCase(module, "INTRODUCTION")).isTrue();
         assertThat(module.getPosition()).isEqualTo(1L);

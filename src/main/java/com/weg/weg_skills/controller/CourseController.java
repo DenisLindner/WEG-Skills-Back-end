@@ -48,7 +48,7 @@ public class CourseController {
 
     @GetMapping
     @Operation(summary = "Lists all published courses")
-    public ResponseEntity<Page<CourseResponseDTO>> findAllPublished(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+    public ResponseEntity<Page<CourseWithRatingResponseDTO>> findAllPublished(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.status(200).body(courseService.findAllPublished(page, size));
     }
 
@@ -60,7 +60,7 @@ public class CourseController {
 
     @GetMapping(path = "/title")
     @Operation(summary = "Lists all published courses containing title")
-    public ResponseEntity<Page<CourseResponseDTO>> findAllByTitlePublished(@RequestParam String title, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+    public ResponseEntity<Page<CourseWithRatingResponseDTO>> findAllByTitlePublished(@RequestParam String title, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.status(200).body(courseService.findAllByTitlePublished(title, page, size));
     }
 
@@ -72,7 +72,7 @@ public class CourseController {
 
     @GetMapping(path = "/{id}")
     @Operation(summary = "Search for a course by ID")
-    public ResponseEntity<CourseResponseDTO> findById(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<CourseWithRatingResponseDTO> findById(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.status(200).body(courseService.findById(id, jwt.getClaim("userId"), jwt.getClaim("roles")));
     }
 

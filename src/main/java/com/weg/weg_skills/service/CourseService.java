@@ -11,6 +11,7 @@ import com.weg.weg_skills.mapper.CertificateMapper;
 import com.weg.weg_skills.mapper.CourseMapper;
 import com.weg.weg_skills.mapper.LessonProgressMapper;
 import com.weg.weg_skills.model.*;
+import com.weg.weg_skills.projection.CourseDetailsProjection;
 import com.weg.weg_skills.projection.CourseWithRatingProjection;
 import com.weg.weg_skills.projection.ProgressProjection;
 import com.weg.weg_skills.repository.*;
@@ -139,7 +140,7 @@ public class CourseService {
     }
 
     @Transactional(readOnly = true)
-    public Page<CourseResponseDTO> findAllPublished(int page, int size) {
+    public Page<CourseWithRatingResponseDTO> findAllPublished(int page, int size) {
         validatePagination(page, size);
 
         Pageable pageable = PageRequest.of(
@@ -147,10 +148,10 @@ public class CourseService {
                 Sort.by("createdAt").descending()
         );
 
-        Page<Course> courses = courseRepository.findAllByCourseStatus(CourseStatus.PUBLISHED, pageable);
+        Page<CourseWithRatingProjection> courses = courseRepository.findAllByCourseStatus(CourseStatus.PUBLISHED, pageable);
 
         return courses.map(c ->
-            courseMapper.toResponse(c, c.getImage() != null && c.getImage().isReady() ? mediaService.getPublicUrl(c.getImage()) : null)
+            courseMapper.toResponseProjection(c, c.getImage() != null && c.getImage().isReady() ? mediaService.getPublicUrl(c.getImage()) : null)
         );
     }
 
@@ -177,7 +178,7 @@ public class CourseService {
     }
 
     @Transactional(readOnly = true)
-    public Page<CourseResponseDTO> findAllByTitlePublished(String title, int page, int size) {
+    public Page<CourseWithRatingResponseDTO> findAllByTitlePublished(String title, int page, int size) {
         validateTitle(title);
 
         validatePagination(page, size);
@@ -187,10 +188,10 @@ public class CourseService {
                 Sort.by("createdAt").descending()
         );
 
-        Page<Course> courses = courseRepository.findAllByTitleContainingIgnoreCaseAndCourseStatus(title.trim(), CourseStatus.PUBLISHED, pageable);
+        Page<CourseWithRatingProjection> courses = courseRepository.findAllByTitleContainingIgnoreCaseAndCourseStatus(title.trim(), CourseStatus.PUBLISHED, pageable);
 
         return courses.map(c ->
-            courseMapper.toResponse(c, c.getImage() != null && c.getImage().isReady() ? mediaService.getPublicUrl(c.getImage()) : null)
+            courseMapper.toResponseProjection(c, c.getImage() != null && c.getImage().isReady() ? mediaService.getPublicUrl(c.getImage()) : null)
         );
     }
 
@@ -210,18 +211,18 @@ public class CourseService {
     }
 
     @Transactional(readOnly = true)
-    public CourseResponseDTO findById(Long id, Long userId, List<String> roles) {
-        Course course = courseRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Course", id));
+    public CourseWithRatingResponseDTO findById(Long id, Long userId, List<String> roles) {
+        CourseDetailsProjection projection = courseRepository.findByIdWithRating(id).orElseThrow(() -> new ResourceNotFoundException("Course", id));
 
-        if (course.getCourseStatus() != CourseStatus.PUBLISHED) {
-            if (!course.getInstructor().getId().equals(userId)) {
+        if (projection.getCourseStatus() != CourseStatus.PUBLISHED) {
+            if (!projection.getInstructorId().equals(userId)) {
                 if (!roles.contains(String.valueOf(UserRole.ADMIN))){
                     throw new ForbiddenException();
                 }
             }
         }
 
-        return courseMapper.toResponse(course, course.getImage() != null && course.getImage().isReady() ? mediaService.getPublicUrl(course.getImage()) : null);
+        return courseMapper.toResponseProjection(projection, projection.getImage() != null && projection.getImage().isReady() ? mediaService.getPublicUrl(projection.getImage()) : null);
     }
 
     @Transactional(readOnly = true)

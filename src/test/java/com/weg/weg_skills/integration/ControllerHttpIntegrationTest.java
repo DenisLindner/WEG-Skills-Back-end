@@ -6,7 +6,6 @@ import com.weg.weg_skills.controller.LessonController;
 import com.weg.weg_skills.controller.ModuleController;
 import com.weg.weg_skills.controller.ReviewController;
 import com.weg.weg_skills.dto.AuthResponseDTO;
-import com.weg.weg_skills.dto.CourseResponseDTO;
 import com.weg.weg_skills.dto.CourseWithRatingResponseDTO;
 import com.weg.weg_skills.enums.CourseStatus;
 import com.weg.weg_skills.exceptions.GlobalExceptionHandler;
@@ -118,9 +117,9 @@ class ControllerHttpIntegrationTest {
     @Test
     void shouldListCatalogResourcesThroughHttp() throws Exception {
         when(courseService.findAllPublished(0, 10)).thenReturn(new PageImpl<>(
-                List.of(new CourseResponseDTO(1L, "Course", "Description", CourseStatus.PUBLISHED, null)), PageRequest.of(0, 10), 1));
+                List.of(new CourseWithRatingResponseDTO(1L, "Course", "Description", CourseStatus.PUBLISHED, 9.0, null)), PageRequest.of(0, 10), 1));
         when(courseService.findAllByTitlePublished("Course", 0, 10)).thenReturn(new PageImpl<>(
-                List.of(new CourseResponseDTO(1L, "Course", "Description", CourseStatus.PUBLISHED, null)), PageRequest.of(0, 10), 1));
+                List.of(new CourseWithRatingResponseDTO(1L, "Course", "Description", CourseStatus.PUBLISHED, 9.0, null)), PageRequest.of(0, 10), 1));
         when(courseService.findMostEnrollments()).thenReturn(List.of(
                 new CourseWithRatingResponseDTO(1L, "Course", "Description", CourseStatus.PUBLISHED, 9.0, null)));
 
